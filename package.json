@@ -26,7 +26,8 @@
   "bin": {
     "geek-lab": "./bin/geek-lab.js",
     "glab": "./bin/geek-lab.js",
-    "geekl": "./bin/geek-lab.js"
+    "geekl": "./bin/geek-lab.js",
+    "gik": "./bin/geek-lab.js"
   },
   "dependencies": {
     "lodash": "^4.17.15",
