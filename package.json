@@ -1,0 +1,43 @@
+{
+  "name": "geek-lab",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "cli"
+  ],
+  "author": "Rafael Prado",
+  "contributors": [
+    {
+      "name": "Francisco Silva silvafass",
+      "email": "silva.fass.developer@gmail.com"
+    }
+  ],
+  "license": "MIT",
+  "main": "./bin/geek-lab.js",
+  "scripts": {
+    "postinstall": "node ./src/scripts/post-install.js",
+    "lint": "eslint .",
+    "test": "nyc --reporter=html --reporter=text mocha --timeout 3000"
+  },
+  "pre-push": [
+    "lint",
+    "test"
+  ],
+  "bin": {
+    "geek-lab": "./bin/geek-lab.js",
+    "glab": "./bin/geek-lab.js",
+    "geekl": "./bin/geek-lab.js"
+  },
+  "dependencies": {
+    "lodash": "^4.17.15",
+    "update-notifier": "^4.0.0",
+    "yargs": "^15.0.2"
+  },
+  "devDependencies": {
+    "eslint": "^6.7.2",
+    "istanbul": "^0.4.5",
+    "mocha": "^6.2.2",
+    "nyc": "^14.1.1",
+    "pre-push": "^0.1.1"
+  }
+}
