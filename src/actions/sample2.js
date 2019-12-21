@@ -3,13 +3,13 @@ exports.describe = 'another sample desc';
 
 exports.builder = (yargs) => yargs
   .positional('param1', {
-    type: 'string'
+    type: 'string',
   })
   .option('param4', {
-    type: 'boolean'
+    type: 'boolean',
   });
 
 exports.handler = (argv) => {
-    console.log('Inside action another sample')
-    console.log(argv);
+  console.log('Inside action another sample')
+  console.log(argv);
 };

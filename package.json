@@ -17,7 +17,7 @@
   "scripts": {
     "postinstall": "node ./src/scripts/post-install.js",
     "lint": "eslint .",
-    "test": "nyc --reporter=html --reporter=text mocha --timeout 3000"
+    "test": "nyc --reporter=html --reporter=text mocha --timeout 3000 --recursive"
   },
   "pre-push": [
     "lint",
@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "eslint": "^6.7.2",
+    "expect": "^24.9.0",
     "istanbul": "^0.4.5",
     "mocha": "^6.2.2",
     "nyc": "^14.1.1",
