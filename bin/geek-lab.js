@@ -61,7 +61,7 @@ if (
   !isEmpty(provided) &&
   provided !== '--help' && //yargs default param to show help
   provided !== '--version' && //yargs default param to show version
-  !commandExist(provided, actionNames) //if command donot exist
+  !commandExists(provided, actionNames) //if command donot exist
 ) {
   console.log(`Invalid command provided "${provided}", see available options below`);
   yargs.showHelp();
