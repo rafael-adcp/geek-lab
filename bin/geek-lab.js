@@ -4,14 +4,16 @@ const updateNotifier = require('update-notifier');
 const toString = require('lodash/toString');
 const isEmpty = require('lodash/isEmpty');
 const isEqual = require('lodash/isEqual');
-const findIndex = require('lodash/findIndex');
+const filter = require('lodash/filter');
+
 const yargs = require('yargs');
 const recursiveReadSync = require('recursive-readdir-sync');
 
 function commandExists(command, listCommands){
-  const commandIndex = findIndex(listCommands, function(o) { return isEqual(o, command) })
-  const commandExist =  isEqual(commandIndex, -1) ? false : true;
-  return commandExist;
+  const filtered = filter(listCommands, function(o) { return isEqual(o.command, command) })
+
+  //checking if the command already exists
+  return isEqual(filtered.length, 0) ? false : true;
 }
 
 const pkg = require(path.join(__dirname, '../package.json'));
@@ -22,14 +24,13 @@ const actionsPath = path.join(__dirname, '../src/actions')
 
 const files = recursiveReadSync(actionsPath);
 
-const actionNames = []; // todo: maybe get rid of this guy since we already store thigns in \/?
-const actionsDetails = {};
+const actionsDetails = [];
 
 // reading default actions from cli
 for(const file of files) {
   const action = require(file)
 
-  if(commandExists(action.command, actionNames)){
+  if(commandExists(action.command, actionsDetails)){
     console.log(
       `Duplicate command provided, commands should be unique!
       command "${action.command}"
@@ -40,8 +41,10 @@ for(const file of files) {
     throw new Error('Duplicate command provided')
 
   } else {
-    actionNames.push(action.command);
-    actionsDetails[action.command] = file;
+    actionsDetails.push({
+      command: action.command,
+      path: file,
+    })
     /*
       we cant use
       .commandDir(rootPath, { recurse: true }) because we need to know all the commands to prevent
@@ -61,7 +64,7 @@ if (
   !isEmpty(provided) &&
   provided !== '--help' && //yargs default param to show help
   provided !== '--version' && //yargs default param to show version
-  !commandExists(provided, actionNames) //if command donot exist
+  !commandExists(provided, actionsDetails) //if command donot exist
 ) {
   console.log(`Invalid command provided "${provided}", see available options below`);
   yargs.showHelp();
