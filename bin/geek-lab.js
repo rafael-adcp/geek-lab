@@ -10,7 +10,7 @@ const yargs = require('yargs');
 const recursiveReadSync = require('recursive-readdir-sync');
 
 function commandExists(command, listCommands){
-  const filtered = filter(listCommands, function(o) { return isEqual(o.command, command) })
+  const filtered = filter(listCommands, function(o) { return isEqual(o.command, command); });
 
   //checking if the command already exists
   return isEqual(filtered.length, 0) ? false : true;
@@ -20,7 +20,7 @@ const pkg = require(path.join(__dirname, '../package.json'));
 
 updateNotifier({ pkg, updateCheckInterval: 1000 }).notify();
 
-const actionsPath = path.join(__dirname, '../src/actions')
+const actionsPath = path.join(__dirname, '../src/actions');
 
 const files = recursiveReadSync(actionsPath);
 
@@ -28,7 +28,7 @@ const actionsDetails = [];
 
 // reading default actions from cli
 for(const file of files) {
-  const action = require(file)
+  const action = require(file);
 
   if(commandExists(action.command, actionsDetails)){
     console.log(
@@ -37,21 +37,21 @@ for(const file of files) {
       from ${file}
       already exists
       it was originally added from: ${actionsDetails[action.command]}`
-    )
-    throw new Error('Duplicate command provided')
+    );
+    throw new Error('Duplicate command provided');
 
   } else {
     actionsDetails.push({
       command: action.command,
       path: file,
-    })
+    });
     /*
       we cant use
       .commandDir(rootPath, { recurse: true }) because we need to know all the commands to prevent
       command colisions
     */
     yargs
-      .command(action)
+      .command(action);
   }
 }
 

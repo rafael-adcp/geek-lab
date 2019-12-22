@@ -10,6 +10,6 @@ exports.builder = (yargs) => yargs
   });
 
 exports.handler = (argv) => {
-  console.log('Inside action another sample')
+  console.log('Inside action another sample');
   console.log(argv);
 };
