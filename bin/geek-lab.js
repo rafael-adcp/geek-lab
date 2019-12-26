@@ -69,9 +69,10 @@ if (
 ) {
   console.log(`Invalid command provided "${provided}", see available options below`);
   yargs.showHelp();
+} else {
+  //preventing invalid actions to be stored on metrics
+  UTILS.collectMetrics(provided);
 }
-
-UTILS.collectMetrics(provided);
 
 yargs
   //apending a message at the botton of help command
