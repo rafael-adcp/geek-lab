@@ -44,7 +44,7 @@ const UTILS = {
 
   collectMetrics(command){
 
-    //allowing the user to opt in / out from metrics, default is false
+    //allowing the user to opt in / out from metrics
     if(this.readConfig().collectMetrics){
 
       // when the cli is called without params, just to prevent metrics to add ""
