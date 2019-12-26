@@ -50,7 +50,6 @@ const UTILS = {
       // when the cli is called without params, just to prevent metrics to add ""
       command = isEmpty(command) ? 'geek-lab' : command;
 
-      //TODO: check if metrics are enabled;
       const fileName = 'metrics_geek-lab.json';
       const metricsFileContent = UTILS.readInternalCliFile(fileName);
 
