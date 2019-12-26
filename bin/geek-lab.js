@@ -8,6 +8,7 @@ const filter = require('lodash/filter');
 
 const yargs = require('yargs');
 const recursiveReadSync = require('recursive-readdir-sync');
+const UTILS = require('../src/lib/utils');
 
 function commandExists(command, listCommands){
   const filtered = filter(listCommands, function(o) { return isEqual(o.command, command); });
@@ -69,6 +70,8 @@ if (
   console.log(`Invalid command provided "${provided}", see available options below`);
   yargs.showHelp();
 }
+
+UTILS.collectMetrics(provided);
 
 yargs
   //apending a message at the botton of help command
