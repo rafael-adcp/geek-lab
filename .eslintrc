@@ -26,6 +26,10 @@
         "allowTemplateLiterals": true
       }
     ],
+    "keyword-spacing": ["error", {
+       "before": true
+       }
+    ],
     "array-bracket-spacing": [
       "error",
       "never"
@@ -77,6 +81,7 @@
         "ignoreComments": false
       }
     ],
+    "space-before-blocks": "error",
     "no-console":"off",
     "prefer-const": "error",
     "no-multiple-empty-lines": [
