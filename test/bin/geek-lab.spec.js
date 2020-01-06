@@ -6,7 +6,7 @@ describe('#bin', () => {
     try {
       execSync('geek-lab');
       done('this shouldnt happen');
-    } catch(e) {
+    } catch (e) {
       expect(e.toString()).toContain('<command>');
       expect(e.toString()).toContain('--help');
       expect(e.toString()).toContain('--version');
@@ -38,10 +38,10 @@ describe('#bin', () => {
   });
 
   it('should show invalid command phrase + help when invalid command is provided', () => {
-    try{
+    try {
       execSync('geek-lab batmanrobin');
     }
-    catch(res){
+    catch (res) {
       expect(res.toString()).toContain('Invalid command provided');
       expect(res.toString()).toContain('see available options below');
       expect(res.toString()).toContain('[command]');

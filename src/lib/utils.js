@@ -38,14 +38,14 @@ const UTILS = {
     }
   },
 
-  readConfig(){
+  readConfig() {
     return UTILS.readInternalCliFile('config_geek-lab.json');
   },
 
-  collectMetrics(command){
+  collectMetrics(command) {
 
     //allowing the user to opt in / out from metrics
-    if(this.readConfig().collectMetrics){
+    if (this.readConfig().collectMetrics) {
 
       // when the cli is called without params, just to prevent metrics to add ""
       command = isEmpty(command) ? 'geek-lab' : command;
@@ -53,7 +53,7 @@ const UTILS = {
       const fileName = 'metrics_geek-lab.json';
       const metricsFileContent = UTILS.readInternalCliFile(fileName);
 
-      if(!metricsFileContent.totalUsage[command]) {
+      if (!metricsFileContent.totalUsage[command]) {
       //creating entry for command if not there yet
         metricsFileContent.totalUsage[command] = 0;
       }
@@ -64,12 +64,12 @@ const UTILS = {
       const currentDate = moment(new Date()).format('DD/MM/YYYY');
 
       // creating entry for date if not there yet
-      if(!metricsFileContent.dailyUsage[currentDate]) {
+      if (!metricsFileContent.dailyUsage[currentDate]) {
         metricsFileContent.dailyUsage[currentDate] = {};
       }
 
       //checking if theres an entry for command for that date
-      if(!metricsFileContent.dailyUsage[currentDate][command]){
+      if (!metricsFileContent.dailyUsage[currentDate][command]) {
         metricsFileContent.dailyUsage[currentDate][command] = 0;
       }
       metricsFileContent.dailyUsage[currentDate][command]++;

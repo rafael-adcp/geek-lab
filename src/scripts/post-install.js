@@ -4,7 +4,7 @@ console.log('Executing post install script');
 
 const localFolderPath = UTILS.getUserDirectory();
 
-if(!fs.existsSync(localFolderPath)){
+if (!fs.existsSync(localFolderPath)) {
   console.log(`Creating local folder for geek-lab at ${localFolderPath}`);
   fs.mkdirSync(localFolderPath);
 }
@@ -29,7 +29,7 @@ if(!fs.existsSync(localFolderPath)){
   },
 ].forEach((item) => {
 
-  if(!fs.existsSync(item.path)){
+  if (!fs.existsSync(item.path)) {
 
     console.log(`Creating ${item.description} for geek-lab at ${item.path}`);
     fs.writeFileSync(

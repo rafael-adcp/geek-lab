@@ -10,7 +10,7 @@ const yargs = require('yargs');
 const recursiveReadSync = require('recursive-readdir-sync');
 const UTILS = require('../src/lib/utils');
 
-function commandExists(command, listCommands){
+function commandExists(command, listCommands) {
   const filtered = filter(listCommands, function(o) { return isEqual(o.command, command); });
 
   //checking if the command already exists
@@ -28,10 +28,10 @@ const files = recursiveReadSync(actionsPath);
 const actionsDetails = [];
 
 // reading default actions from cli
-for(const file of files) {
+for (const file of files) {
   const action = require(file);
 
-  if(commandExists(action.command, actionsDetails)){
+  if (commandExists(action.command, actionsDetails)) {
     console.log(
       `Duplicate command provided, commands should be unique!
       command "${action.command}"
