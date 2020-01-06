@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "lodash": "^4.17.15",
+    "moment": "^2.24.0",
     "recursive-readdir-sync": "^1.0.6",
     "update-notifier": "^4.0.0",
     "yargs": "^15.0.2"
