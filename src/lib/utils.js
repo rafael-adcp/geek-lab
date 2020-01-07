@@ -17,7 +17,7 @@ const UTILS = {
     } catch (e) {
       console.log('Something went wrong, either it couldnt find the file, or its failing to parse it as json');
       console.log(`Could not find folder or file ${filePath}`);
-      console.log(`Debug instructions: 
+      console.log(`Debug instructions:
       - check file for invalid characters
       - install the tool again and it will generate everything you need if missing something`);
       console.log(e);
@@ -54,7 +54,7 @@ const UTILS = {
       const metricsFileContent = UTILS.readInternalCliFile(fileName);
 
       if (!metricsFileContent.totalUsage[command]) {
-      //creating entry for command if not there yet
+        //creating entry for command if not there yet
         metricsFileContent.totalUsage[command] = 0;
       }
 
@@ -79,6 +79,20 @@ const UTILS = {
         metricsFileContent
       );
     }
+  },
+
+  getConfigValue(key) {
+    const configFile = UTILS.readConfig();
+    const currentEnv = configFile.env;
+
+    if (isEmpty(currentEnv)) {
+      throw new Error('Invalid env for cli');
+    } else if (isEmpty(configFile[currentEnv])) {
+      throw new Error(`Environment ${currentEnv} is not set on config file.`);
+    } else if (isEmpty(configFile[currentEnv][key])) {
+      throw new Error(`Key "${key}" is not set for environment "${currentEnv}"`);
+    }
+    return configFile[currentEnv][key];
   },
 };
 

@@ -17,7 +17,7 @@
   "scripts": {
     "postinstall": "node ./src/scripts/post-install.js",
     "lint": "eslint .",
-    "test": "nyc --reporter=html --reporter=text mocha --timeout 3000 --recursive"
+    "test": "nyc --reporter=html --reporter=text mocha --timeout 10000 --recursive"
   },
   "pre-push": [
     "lint",
@@ -30,10 +30,12 @@
     "gik": "./bin/geek-lab.js"
   },
   "dependencies": {
+    "axios": "^0.19.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "recursive-readdir-sync": "^1.0.6",
     "update-notifier": "^4.0.0",
+    "uuid": "^3.3.3",
     "yargs": "^15.0.2"
   },
   "devDependencies": {

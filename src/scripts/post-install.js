@@ -17,14 +17,17 @@ if (!fs.existsSync(localFolderPath)) {
       'env': null,
       'debugMode': false,
       'collectMetrics': true,
+      'dev': {
+        'apiUrl': 'my_url_here',
+      },
     },
   },
   {
     description: 'metrics file',
     path: `${localFolderPath}/metrics_geek-lab.json`,
     data: {
-      totalUsage: { },
-      dailyUsage: { },
+      totalUsage: {},
+      dailyUsage: {},
     },
   },
 ].forEach((item) => {
