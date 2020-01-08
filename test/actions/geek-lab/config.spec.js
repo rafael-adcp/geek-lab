@@ -9,7 +9,7 @@ const {
 
 const originalConfig = readConfig();
 describe('#actions/geek-lab/config', () => {
-  //TODO: replace with sinon
+  //TODO: mock this somehow
   before(() => {
     console.log('making a backup of config file before tests mess with it');
     writeInternalCliFile(
