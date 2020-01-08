@@ -2,6 +2,8 @@ const path = require('path');
 const fs = require('fs');
 const moment = require('moment');
 const isEmpty = require('lodash/isEmpty');
+const axios = require('axios');
+const startsWith = require('lodash/startsWith');
 
 const UTILS = {
   getUserDirectory() {
@@ -93,6 +95,55 @@ const UTILS = {
       throw new Error(`Key "${key}" is not set for environment "${currentEnv}"`);
     }
     return configFile[currentEnv][key];
+  },
+
+  async performRequest(params) {
+
+    if (isEmpty(params)) {
+      throw new Error('No params were provided');
+    }
+    const method = params.method || null;
+    let endpoint = params.endpoint || null;
+
+    let data;
+    if (!isEmpty(params.data)) {
+      data = startsWith(params.data, '@') ? fs.readFileSync(params.data.replace('@', ''), 'utf8') : params.data;
+      //ensuring we have valid json DATA
+      JSON.parse(data);
+    }
+
+    if (!method || !endpoint) {
+      console.log('provided information:');
+      console.log(`method: ${method}`);
+      console.log(`endpoint: ${endpoint}`);
+      throw new Error(`To perform a request you must provide at least a method and an endpoint`);
+    }
+
+    if (!['POST', 'GET', 'DELETE', 'PUT'].includes(method.toUpperCase())) {
+      console.log(`provided: ${method.toUpperCase()}`);
+      throw new Error('Invalid method provided');
+    }
+
+    //preventing double "/""
+    endpoint = startsWith(params.endpoint, '/') ? params.endpoint : `/${params.endpoint}`;
+
+    const res = await axios({
+      method: method.toUpperCase(),
+      url: UTILS.getConfigValue('apiUrl') + endpoint,
+      json: true,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data: data,
+    });
+
+    const response = await res.data;
+
+    if (!response) {
+      console.log(response);
+      throw new Error(`Something went wrong while making the request ${response}`);
+    }
+    return response;
   },
 };
 
