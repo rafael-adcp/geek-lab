@@ -17,8 +17,7 @@ describe('#bin', () => {
   });
 
   it('should show help if --help is provided', () => {
-    let res = execSync('geek-lab --help');
-    res = res.toString();
+    const res = execSync('geek-lab --help').toString();
 
     expect(res).toContain('<command>');
     expect(res).toContain('--help');
