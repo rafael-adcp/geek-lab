@@ -1,10 +1,12 @@
 const execSync = require('child_process').execSync;
 const expect = require('expect');
 
+const execBin = require('../helper');
+
 describe('#bin', () => {
   it('should show help if nothing is provided', (done) => {
     try {
-      execSync('geek-lab');
+      execSync(`${execBin}`);
       done('this shouldnt happen');
     } catch (e) {
       expect(e.toString()).toContain('<command>');
@@ -17,7 +19,7 @@ describe('#bin', () => {
   });
 
   it('should show help if --help is provided', () => {
-    const res = execSync('geek-lab --help').toString();
+    const res = execSync(`${execBin} --help`).toString();
 
     expect(res).toContain('<command>');
     expect(res).toContain('--help');
@@ -27,7 +29,7 @@ describe('#bin', () => {
   });
 
   it('should show version if --version is provided', () => {
-    const res = execSync('geek-lab --version').toString();
+    const res = execSync(`${execBin} --version`).toString();
 
     expect(res).not.toContain('<command>');
     expect(res).not.toContain('--help');
@@ -38,7 +40,7 @@ describe('#bin', () => {
 
   it('should show invalid command phrase + help when invalid command is provided', () => {
     try {
-      execSync('geek-lab batmanrobin');
+      execSync(`${execBin} batmanrobin`);
     }
     catch (res) {
       expect(res.toString()).toContain('Invalid command provided');

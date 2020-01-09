@@ -7,6 +7,7 @@ const {
   writeInternalCliFile,
 } = require('../../../src/lib/utils');
 
+const execBin = require('../../helper');
 const originalConfig = readConfig();
 describe('#actions/geek-lab/config', () => {
   //TODO: mock this somehow
@@ -27,7 +28,7 @@ describe('#actions/geek-lab/config', () => {
   });
 
   it('should show cli config when no params are provided', () => {
-    const res = execSync('geek-lab config').toString();
+    const res = execSync(`${execBin} config`).toString();
     expect(res).toContain('Configuration file can be found at');
   });
 
@@ -36,8 +37,8 @@ describe('#actions/geek-lab/config', () => {
     const key = `myCustomKey-${value}`;
     const env = `env-${value}`;
 
-    execSync(`geek-lab config --env ${env} --key ${key} --value ${value}`);
-    const res = execSync('geek-lab config').toString();
+    execSync(`${execBin} config --env ${env} --key ${key} --value ${value}`);
+    const res = execSync(`${execBin} config`).toString();
 
     expect(res).toContain(env);
     expect(res).toContain(key);
