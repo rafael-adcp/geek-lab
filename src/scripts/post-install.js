@@ -17,6 +17,8 @@ if (!fs.existsSync(localFolderPath)) {
       'env': null,
       'debugMode': false,
       'collectMetrics': true,
+      'token': null,
+      'tokenExpires': null,
       'dev': {
         'apiUrl': 'my_url_here',
       },
