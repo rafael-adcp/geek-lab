@@ -1,5 +1,7 @@
 const execSync = require('child_process').execSync;
 const expect = require('expect');
+const execBin = require('../../helper');
+
 [
   'cget',
   'cdelete',
@@ -7,7 +9,7 @@ const expect = require('expect');
   describe(`#actions/geek-lab/rest/rest::${restAction}`, () => {
     it(`${restAction}:: should throw error if no endpoint is provided`, (done) => {
       try {
-        execSync(`geek-lab ${restAction}`).toString();
+        execSync(`${execBin} ${restAction}`).toString();
         done('this shouldnt happen');
       } catch (e) {
         expect(e.toString()).toContain('Parameter --endpoint cant be empty');
@@ -25,19 +27,19 @@ const expect = require('expect');
     [
       {
         testName: `${restAction}:: should throw error if no --json is provided`,
-        command: `geek-lab ${restAction}`,
+        command: `${execBin} ${restAction}`,
         errorMessage: 'Parameter --endpoint and --json cant be empty',
       },
 
       {
         testName: `${restAction}:: should throw error if no --endpoint is provided`,
-        command: `geek-lab ${restAction}`,
+        command: `${execBin} ${restAction}`,
         errorMessage: 'Parameter --endpoint and --json cant be empty',
       },
 
       {
         testName: `${restAction}:: should throw error if no --json is provided`,
-        command: `geek-lab ${restAction} --endpoint blah`,
+        command: `${execBin} ${restAction} --endpoint blah`,
         errorMessage: 'Parameter --endpoint and --json cant be empty',
       },
     ].forEach((element) => {

@@ -1,0 +1,1 @@
+module.exports = `node "${require('path').resolve(__dirname, '../bin/geek-lab.js')}"`;
