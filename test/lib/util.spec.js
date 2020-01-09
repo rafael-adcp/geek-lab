@@ -150,10 +150,10 @@ describe('#src/lib/utils/lib/writeInternalCliFile', () => {
     const fnStub = sinon.stub().throws(new Error('muhahaha'));
     sinon.replace(fs, 'writeFileSync', fnStub);
 
-    try {
+    try{
       writeInternalCliFile('batman');
-    } catch (e) {
-      expect(e.toString()).toContain('Failedfdfdfdf to write file');
+    } catch (e){
+      expect(e.toString()).toContain('Failed to write file')
     }
   });
 });
