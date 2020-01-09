@@ -153,7 +153,7 @@ describe('#src/lib/utils/lib/writeInternalCliFile', () => {
     try {
       writeInternalCliFile('batman');
     } catch (e) {
-      expect(e.toString()).toContain('Failed to write file');
+      expect(e.toString()).toContain('Failedfdfdfdf to write file');
     }
   });
 });
