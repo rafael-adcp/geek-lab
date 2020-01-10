@@ -86,12 +86,11 @@ const UTILS = {
   getConfigValue(key) {
     const configFile = UTILS.readConfig();
     const currentEnv = configFile.env;
-
     if (isEmpty(currentEnv)) {
       throw new Error('Invalid env for cli');
     } else if (isEmpty(configFile[currentEnv])) {
       throw new Error(`Environment ${currentEnv} is not set on config file.`);
-    } else if (isEmpty(configFile[currentEnv][key])) {
+    } else if (!configFile[currentEnv][key] && isEmpty(configFile[currentEnv][key])) {
       throw new Error(`Key "${key}" is not set for environment "${currentEnv}"`);
     }
     return configFile[currentEnv][key];
@@ -108,8 +107,6 @@ const UTILS = {
     let data;
     if (!isEmpty(params.data)) {
       data = startsWith(params.data, '@') ? fs.readFileSync(params.data.replace('@', ''), 'utf8') : params.data;
-      //ensuring we have valid json DATA
-      JSON.parse(data);
     }
 
     if (!method || !endpoint) {
@@ -138,11 +135,6 @@ const UTILS = {
     });
 
     const response = await res.data;
-
-    if (!response) {
-      console.log(response);
-      throw new Error(`Something went wrong while making the request ${response}`);
-    }
     return response;
   },
 };

@@ -7,42 +7,36 @@ exports.builder = (yargs) => yargs
 const moment = require('moment');
 const isEmpty = require('lodash/isEmpty');
 
-const {
-  performRequest,
-  getConfigValue,
-  readConfig,
-  writeInternalCliFile,
-} = require('../lib/utils');
+const UTILS = require('../lib/utils');
 
 exports.handler = async () => {
-  const appConfig = readConfig();
-
+  const appConfig = UTILS.readConfig();
   //if theres no token set or if the token is expired
-  if (!appConfig.token || moment().isSameOrAfter(readConfig().tokenExpires)) {
+  if (!appConfig.token || moment().isSameOrAfter(UTILS.readConfig().tokenExpires)) {
     let apiResponse;
     try {
-      apiResponse = await performRequest({
+      apiResponse = await UTILS.performRequest({
         method: 'POST',
-        endpoint: getConfigValue('apiAuthenticationEndpoint'),
-        data: JSON.stringify(getConfigValue('apiAuthenticationJson')),
+        endpoint: UTILS.getConfigValue('apiAuthenticationEndpoint'),
+        data: JSON.stringify(UTILS.getConfigValue('apiAuthenticationJson')),
       });
     } catch (e) {
       console.log(e.toString());
       throw new Error('Failed to execute api call');
     }
-
-    if (!apiResponse.response || apiResponse.response.status !== 'OK' || isEmpty(apiResponse.response[getConfigValue('apiTokenResponseField')])) {
+    if (!apiResponse.response || apiResponse.response.status !== 'OK' || isEmpty(apiResponse.response[UTILS.getConfigValue('apiTokenResponseField')])) {
       console.log(apiResponse);
       throw new Error('Something wrong happend on authentication');
     }
+    appConfig.token = apiResponse.response[UTILS.getConfigValue('apiTokenResponseField')];
 
-    appConfig.token = apiResponse.response[getConfigValue('apiTokenResponseField')];
-
-    appConfig.tokenExpires = moment().add(getConfigValue('apiAuthenticationExpiresInMinutes', 'minutes'));
-    writeInternalCliFile(
+    appConfig.tokenExpires = moment().add(UTILS.getConfigValue('apiAuthenticationExpiresInMinutes'), 'minutes');
+    UTILS.writeInternalCliFile(
       'config_geek-lab.json',
       appConfig
     );
   }
-  console.log(`auth worked, token: ${appConfig.token}`);
+  const response = `auth worked, token: ${appConfig.token}`;
+  console.log(response);
+  return response;
 };

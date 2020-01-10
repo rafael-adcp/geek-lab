@@ -6,15 +6,13 @@ exports.builder = (yargs) => yargs
   .example('$0 change-env --env my-awesome-project', 'move cli to uses my-awesome-project config')
   .option('env', { describe: 'environment', type: 'string' });
 
-const {
-  readConfig,
-  writeInternalCliFile,
-} = require('../../lib/utils');
+const UTILS = require('../../lib/utils');
 
 const isEmpty = require('lodash/isEmpty');
 
 exports.handler = (argv) => {
-  const configFileContent = readConfig();
+  const configFileContent = UTILS.readConfig();
+
   if (isEmpty(argv.env)) {
     throw new Error('Parameter env cant be empty');
   }
@@ -28,7 +26,7 @@ exports.handler = (argv) => {
   configFileContent.token = null;
   configFileContent.tokenExpires = null;
 
-  writeInternalCliFile(
+  UTILS.writeInternalCliFile(
     'config_geek-lab.json',
     configFileContent
   );

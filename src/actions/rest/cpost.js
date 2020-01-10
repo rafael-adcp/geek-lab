@@ -1,5 +1,6 @@
 exports.command = 'cpost';
 exports.describe = 'performs a POST request';
+exports.restAction = 'POST';
 
 exports.builder = (yargs) => yargs
   .option('url', { describe: 'endpoint to make a POST request', demanOption: true, type: 'string' })
@@ -8,9 +9,7 @@ exports.builder = (yargs) => yargs
 
 const isEmpty = require('lodash/isEmpty');
 
-const {
-  performRequest,
-} = require('../../lib/utils');
+const UTILS = require('../../lib/utils');
 
 exports.handler = async (argv) => {
   if (!argv || isEmpty(argv.endpoint) || isEmpty(argv.json)) {
@@ -18,7 +17,7 @@ exports.handler = async (argv) => {
   }
 
   console.log(
-    await performRequest({
+    await UTILS.performRequest({
       method: 'POST',
       endpoint: argv.endpoint,
       data: argv.json,

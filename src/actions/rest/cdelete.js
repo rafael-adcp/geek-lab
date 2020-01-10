@@ -1,5 +1,6 @@
 exports.command = 'cdelete';
 exports.describe = 'performs a DELETE request';
+exports.restAction = 'DELETE';
 
 exports.builder = (yargs) => yargs
   .option('url', { describe: 'endpoint to make a DELETE request', demanOption: true, type: 'string' })
@@ -8,9 +9,7 @@ exports.builder = (yargs) => yargs
 
 const isEmpty = require('lodash/isEmpty');
 
-const {
-  performRequest,
-} = require('../../lib/utils');
+const UTILS = require('../../lib/utils');
 
 exports.handler = async (argv) => {
   if (!argv || isEmpty(argv.endpoint)) {
@@ -18,7 +17,7 @@ exports.handler = async (argv) => {
   }
 
   console.log(
-    await performRequest({
+    await UTILS.performRequest({
       method: 'DELETE',
       endpoint: argv.endpoint,
     })

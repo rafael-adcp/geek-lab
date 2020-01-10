@@ -1,4 +1,6 @@
 const expect = require('expect');
+const sinon = require('sinon');
+const fs = require('fs');
 
 const {
   getConfigValue,
@@ -8,9 +10,7 @@ const {
   collectMetrics,
 } = require('../../src/lib/utils');
 
-const sinon = require('sinon');
 const utils = require('../../src/lib/utils');
-const fs = require('fs');
 
 describe('#src/lib/utils/lib/getConfigValue', () => {
   afterEach(() => {
@@ -79,6 +79,25 @@ describe('#src/lib/utils/lib/getConfigValue', () => {
 });
 
 describe('#src/lib/utils/lib/performRequest', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should read json file if starts with @', (done) => {
+    const readFileSyncStub = sinon.stub().returns({
+      testReadFile: 'mocked read file',
+    });
+
+    sinon.replace(fs, 'readFileSync', readFileSyncStub);
+
+    performRequest({
+      data: '@mocked.json',
+    }).catch(() => {
+      expect(readFileSyncStub.calledOnce).toBe(true);
+      done();
+    });
+  });
+
   [
     {
       testName: 'should thow error if params is null',

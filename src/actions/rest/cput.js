@@ -1,5 +1,6 @@
 exports.command = 'cput';
 exports.describe = 'performs a PUT request';
+exports.restAction = 'PUT';
 
 exports.builder = (yargs) => yargs
   .option('url', { describe: 'endpoint to make a PUT request', demanOption: true, type: 'string' })
@@ -8,9 +9,7 @@ exports.builder = (yargs) => yargs
 
 const isEmpty = require('lodash/isEmpty');
 
-const {
-  performRequest,
-} = require('../../lib/utils');
+const UTILS = require('../../lib/utils');
 
 exports.handler = async (argv) => {
   if (!argv || isEmpty(argv.endpoint) || isEmpty(argv.json)) {
@@ -18,7 +17,7 @@ exports.handler = async (argv) => {
   }
 
   console.log(
-    await performRequest({
+    await UTILS.performRequest({
       method: 'PUT',
       endpoint: argv.endpoint,
       data: argv.json,
