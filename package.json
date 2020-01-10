@@ -17,7 +17,9 @@
   "scripts": {
     "postinstall": "node ./src/scripts/post-install.js",
     "lint": "eslint .",
-    "test": "nyc --reporter=html --reporter=text mocha --timeout 10000 --recursive"
+    "test": "nyc --reporter=html --reporter=text mocha --timeout 10000 --recursive --exit",
+    "clean": "rm -Rf node_modules/ && rm -f ./package-lock.json && npm cache clean -f && rm -Rf .nyc_output/ && rm -Rf coverage/",
+    "rebuild": "npm run clean && npm i"
   },
   "pre-push": [
     "lint",
@@ -30,21 +32,22 @@
     "gik": "./bin/geek-lab.js"
   },
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.19.1",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "recursive-readdir-sync": "^1.0.6",
     "sinon": "^8.0.4",
     "update-notifier": "^4.0.0",
     "uuid": "^3.3.3",
-    "yargs": "^15.0.2"
+    "yargs": "^15.1.0"
   },
   "devDependencies": {
-    "eslint": "^6.7.2",
+    "eslint": "^6.8.0",
     "expect": "^24.9.0",
     "istanbul": "^0.4.5",
     "mocha": "^6.2.2",
-    "nyc": "^14.1.1",
-    "pre-push": "^0.1.1"
+    "nyc": "^15.0.0",
+    "pre-push": "^0.1.1",
+    "proxyquire": "^2.1.3"
   }
 }

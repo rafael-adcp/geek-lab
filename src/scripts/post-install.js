@@ -14,13 +14,22 @@ if (!fs.existsSync(localFolderPath)) {
     description: 'local config',
     path: `${localFolderPath}/config_geek-lab.json`,
     data: {
-      'env': null,
+      'env': 'dev',
       'debugMode': false,
       'collectMetrics': true,
       'token': null,
       'tokenExpires': null,
       'dev': {
-        'apiUrl': 'my_url_here',
+        'apiUrl': 'http://www.my_website.com',
+        'apiAuthenticationExpiresInMinutes': 120,
+        'apiAuthenticationEndpoint': '/auth',
+        'apiTokenResponseField': 'bbb',
+        'apiAuthenticationJson': {
+          auth: {
+            username: 'aaa',
+            password: 'bbb',
+          },
+        },
       },
     },
   },
