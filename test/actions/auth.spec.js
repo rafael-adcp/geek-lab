@@ -1,112 +1,126 @@
-const execSync = require('child_process').execSync;
 const expect = require('expect');
 const uuidv1 = require('uuid/v1');
 const moment = require('moment');
+const yargs = require('yargs');
+const sinon = require('sinon');
 
-const {
-  readConfig,
-  writeInternalCliFile,
-} = require('../../src/lib/utils');
+const authAction = require('../../src/actions/auth');
+const utils = require('../../src/lib/utils');
 
-const execBin = require('../helper');
-
-const originalConfig = readConfig();
 describe('#actions/auth', () => {
-  //TODO: mock this somehow
-  before(() => {
-    console.log('making a backup of config file before tests mess with it');
-    writeInternalCliFile(
-      'bkp_config_geek-lab.json',
-      originalConfig
-    );
+
+  afterEach(() => {
+    sinon.restore();
   });
 
-  after(() => {
-    console.log('restoring config file');
-    writeInternalCliFile(
-      'config_geek-lab.json',
-      originalConfig
-    );
-  });
+  it('should just print the token if a token is set and it is not expired', (done) => {
+    const token = `faking me for test - ${uuidv1()}`;
+    const tokenExpires = moment().add(120, 'minutes');
 
-  it('should just print the token if a token is set and it is not expired', () => {
-    const config = readConfig();
-    config.token = `faking me for test - ${uuidv1()}`;
-    //setting token to expire within next 2 hours
-    config.tokenExpires = moment().add(120, 'minutes');
+    const readConfigStub = sinon.stub().returns({
+      'env': null,
+      'token': token,
+      'tokenExpires': tokenExpires,
+    });
 
-    //placing the config
-    writeInternalCliFile(
-      'config_geek-lab.json',
-      config
-    );
-
-    const res = execSync(`${execBin} auth`).toString();
-    expect(res).toContain(config.token);
+    sinon.replace(utils, 'readConfig', readConfigStub);
+    authAction.builder(yargs);
+    authAction.handler().then((res) => {
+      expect(res).toContain(token);
+      done();
+    });
   });
 
   it('should throw an error if fails to call api', (done) => {
-    const config = readConfig();
-    config.token = null; // forcing it to create a new one
-    config.env = 'unitTests';
-    config.unitTests = {
-      'apiUrl': 'my_url_here',
-      'apiAuthenticationExpiresInMinutes': 120,
-      'apiAuthenticationEndpoint': 'aaa',
-      'apiTokenResponseField': 'bbb',
-      'apiAuthenticationJson': {
-        auth: {
-          username: 'aaa',
-          password: 'bbb',
+    const readConfigStub = sinon.stub().returns({
+      token: null, // forcing it to create a new one
+      env: 'unitTests',
+      unitTests: {
+        'apiUrl': 'my_url_here',
+        'apiAuthenticationExpiresInMinutes': 120,
+        'apiAuthenticationEndpoint': 'aaa',
+        'apiTokenResponseField': 'bbb',
+        'apiAuthenticationJson': {
+          auth: {
+            username: 'aaa',
+            password: 'bbb',
+          },
         },
       },
-    };
+    });
 
-    //placing the config
-    writeInternalCliFile(
-      'config_geek-lab.json',
-      config
-    );
+    sinon.replace(utils, 'readConfig', readConfigStub);
 
-    try {
-      execSync(`${execBin} auth`);
-      done('this should not happen');
-    } catch (e) {
+    authAction.handler().catch((e) => {
       expect(e.toString()).toContain('Failed to execute api call');
       done();
-    }
+    });
   });
 
-  it('should throw an error if api response is not on the expected shape', (done) => {
-    const config = readConfig();
-    config.token = null; // forcing it to create a new one
-    config.tokenExpires = null; // forcing it to be filled
-    config.env = 'unitTests';
-    config.unitTests = {
-      'apiUrl': 'https://httpstatuses.com',
-      'apiAuthenticationExpiresInMinutes': 120,
-      'apiAuthenticationEndpoint': '/200',
-      'apiTokenResponseField': 'bbb',
-      'apiAuthenticationJson': {
-        auth: {
-          username: 'aaa',
-          password: 'bbb',
+  it('should throw an error if api response is not with the expected shape', (done) => {
+    const readConfigStub = sinon.stub().returns({
+      token: null, // forcing it to create a new one
+      tokenExpires: null, // forcing it to be filled
+      env: 'unitTests',
+      unitTests: {
+        'apiUrl': 'https://httpstatuses.com',
+        'apiAuthenticationExpiresInMinutes': 120,
+        'apiAuthenticationEndpoint': '/200',
+        'apiTokenResponseField': 'bbb',
+        'apiAuthenticationJson': {
+          auth: {
+            username: 'aaa',
+            password: 'bbb',
+          },
         },
       },
-    };
+    });
 
-    //placing the config
-    writeInternalCliFile(
-      'config_geek-lab.json',
-      config
-    );
+    sinon.replace(utils, 'readConfig', readConfigStub);
 
-    try {
-      execSync(`${execBin} auth`);
-      done('this should not happen');
-    } catch (e) {
+    authAction.handler().catch((e) => {
       expect(e.toString()).toContain('Something wrong happend on authentication');
       done();
-    }
+    });
+  });
+
+  it('should save token and token expires when authentication call works', (done) => {
+    const readConfigStub = sinon.stub().returns({
+      token: null, // forcing it to create a new one
+      tokenExpires: null, // forcing it to be filled
+      env: 'unitTests',
+      'unitTests': {
+        'apiUrl': 'https://httpstatuses.com',
+        'apiAuthenticationExpiresInMinutes': 120,
+        'apiAuthenticationEndpoint': '/200',
+        'apiTokenResponseField': 'token',
+        'apiAuthenticationJson': {
+          auth: {
+            username: 'aaa',
+            password: 'bbb',
+          },
+        },
+      },
+    });
+
+    sinon.replace(utils, 'readConfig', readConfigStub);
+
+    const performRequestStub = sinon.stub().resolves({
+      response: {
+        status: 'OK',
+        token: 'batman-1234',
+      },
+    });
+
+    sinon.replace(utils, 'performRequest', performRequestStub);
+
+    const writeInternalCliFileStub = sinon.stub().returns();
+    sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
+
+    authAction.handler().then(() => {
+      const stubCalledParams = writeInternalCliFileStub.getCall(0);
+      expect(stubCalledParams.toString()).toContain('batman-1234');
+      done();
+    });
   });
 });

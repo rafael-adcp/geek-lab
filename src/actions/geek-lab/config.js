@@ -8,28 +8,25 @@ exports.builder = (yargs) => yargs
   .option('key', { describe: 'key that will receive the value', type: 'string' })
   .option('value', { describe: 'value...', type: 'string' });
 
-const {
-  readConfig,
-  getUserDirectory,
-  writeInternalCliFile,
-} = require('../../lib/utils');
+const UTILS = require('../../lib/utils');
+
 exports.handler = (argv) => {
-  const configFileContent = readConfig();
+  const configFileContent = UTILS.readConfig();
   if (argv.env && argv.key && argv.value) {
     if (!configFileContent[argv.env]) {
       configFileContent[argv.env] = {};
     }
     configFileContent[argv.env][argv.key] = argv.value;
-    writeInternalCliFile(
+    UTILS.writeInternalCliFile(
       'config_geek-lab.json',
       configFileContent
     );
   } else { // by default config is shown
-    console.log(`Configuration file can be found at "${getUserDirectory()}"`);
-    console.log(
-      JSON.stringify(
-        configFileContent, null, ' '
-      )
+    console.log(`Configuration file can be found at "${UTILS.getUserDirectory()}"`);
+    const output = JSON.stringify(
+      configFileContent, null, ' '
     );
+    console.log(output);
+    return output;
   }
 };
