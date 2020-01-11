@@ -1,6 +1,7 @@
 const expect = require('expect');
 const sinon = require('sinon');
 const fs = require('fs');
+const moment = require('moment');
 
 const {
   getConfigValue,
@@ -178,7 +179,7 @@ describe('#src/lib/utils/lib/writeInternalCliFile', () => {
 });
 
 describe('#src/lib/utils/lib/collectMetrics', () => {
-  after(() => {
+  afterEach(() => {
     sinon.restore();
   });
 
@@ -200,6 +201,58 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
     sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
 
     collectMetrics('magicInMe');
+    const stubCalledParams = writeInternalCliFileStub.getCall(0);
+
+    expect(writeInternalCliFileStub.calledOnce).toBe(true);
+    expect(stubCalledParams.toString()).toContain(`{ ${moment(new Date()).format('DD/MM/YYYY')}: { magicInMe: 1 } }`);
+    expect(stubCalledParams.toString()).toContain('magicInMe: 1');
+
+  });
+
+  it('should not track metrics if config variable is false', () => {
+    const readConfigStub = sinon.stub().returns({
+      'collectMetrics': false,
+    });
+
+    sinon.replace(utils, 'readConfig', readConfigStub);
+
+    const writeInternalCliFileStub = sinon.stub().returns();
+    sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
+
+    collectMetrics('magicInMe');
+    expect(writeInternalCliFileStub.calledOnce).toBe(false);
+  });
+
+  it('should reuse entry while tracking metrics if available', () => {
+    const readConfigStub = sinon.stub().returns({
+      'collectMetrics': true,
+    });
+
+    sinon.replace(utils, 'readConfig', readConfigStub);
+
+    const readInternalCliFileStub = sinon.stub().returns({
+      'totalUsage': {
+        'magicInMe': 1,
+      },
+      'dailyUsage': {
+        [moment(new Date()).format('DD/MM/YYYY')]: {
+          magicInMe: 1,
+        },
+      },
+    });
+
+    sinon.replace(utils, 'readInternalCliFile', readInternalCliFileStub);
+
+    const writeInternalCliFileStub = sinon.stub().returns();
+    sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
+
+    collectMetrics('magicInMe');
+    const stubCalledParams = writeInternalCliFileStub.getCall(0);
+
+    expect(writeInternalCliFileStub.calledOnce).toBe(true);
+    expect(stubCalledParams.toString()).toContain(`{ ${moment(new Date()).format('DD/MM/YYYY')}: { magicInMe: 2 } }`);
+    expect(stubCalledParams.toString()).toContain('magicInMe: 2');
+
   });
 
 });
