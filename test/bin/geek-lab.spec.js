@@ -1,7 +1,10 @@
 const execSync = require('child_process').execSync;
 const expect = require('expect');
 
-const execBin = require('../helper');
+/**
+ * command to execute cli via node so that tests can be executed via GitHub Actions
+ */
+const execBin = `node "${require('path').resolve(__dirname, '../../bin/geek-lab')}"`;
 
 describe('#bin', () => {
   it('should show help if nothing is provided', (done) => {

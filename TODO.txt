@@ -1,8 +1,0 @@
-todo:
-
-- make geek-lab\bin\geek-lab.js as dumb as possible
-- add option to load custom actions
-- unit tests on /\ to make it back to 100%
-- remove proxy wire since we no longer need it
-- kill 'helper.js' and move its logic to the only test thats actually using it
-- readme explaining what are custom actions, how they can be used, and how to set then
