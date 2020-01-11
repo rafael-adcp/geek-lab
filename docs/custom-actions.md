@@ -75,7 +75,7 @@ And all files inside of those paths must follow this shape:
 https://github.com/yargs/yargs/blob/master/docs/advanced.md
 http://yargs.js.org/
 
-and off course current existing "actions" geek-lab\src\actions
+and obviously existing "actions" geek-lab\src\actions
 */
 exports.command = 'COMMAND';
 exports.describe = 'DESCRIPTION';
