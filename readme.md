@@ -15,4 +15,4 @@ Pros:
 npm i -g geek-lab
 ```
 
-[Check out our docs...]('./docs')
+[Check out our docs...](https://github.com/rafael-adcp/geek-lab/tree/master/docs)

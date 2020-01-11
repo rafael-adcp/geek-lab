@@ -50,7 +50,7 @@ Sample usage of "custom-actions"
 created with: https://textik.com/
 ```
 
-By providing `paths` via config `customActionsPath`, the cli will automatically import them to `geek-lab` setup. (**note**: all files within this path must be compatible with the cli)
+By providing `paths` via config key `customActionsPath`, the cli will automatically import them to your local `geek-lab` setup. (**note**: all files within this path must be compatible with the cli)
 
 For the diagram your config would look like this:
 ```BASH
