@@ -1,9 +1,9 @@
 const path = require('path');
 const fs = require('fs');
 const moment = require('moment');
-const isEmpty = require('lodash/isEmpty');
 const axios = require('axios');
-const startsWith = require('lodash/startsWith');
+const recursiveReadSync = require('recursive-readdir-sync');
+const _ = require('lodash');
 
 const UTILS = {
   getUserDirectory() {
@@ -50,7 +50,7 @@ const UTILS = {
     if (UTILS.readConfig().collectMetrics) {
 
       // when the cli is called without params, just to prevent metrics to add ""
-      command = isEmpty(command) ? 'geek-lab' : command;
+      command = _.isEmpty(command) ? 'geek-lab' : command;
 
       const fileName = 'metrics_geek-lab.json';
       const metricsFileContent = UTILS.readInternalCliFile(fileName);
@@ -86,11 +86,11 @@ const UTILS = {
   getConfigValue(key) {
     const configFile = UTILS.readConfig();
     const currentEnv = configFile.env;
-    if (isEmpty(currentEnv)) {
+    if (_.isEmpty(currentEnv)) {
       throw new Error('Invalid env for cli');
-    } else if (isEmpty(configFile[currentEnv])) {
+    } else if (_.isEmpty(configFile[currentEnv])) {
       throw new Error(`Environment ${currentEnv} is not set on config file.`);
-    } else if (!configFile[currentEnv][key] && isEmpty(configFile[currentEnv][key])) {
+    } else if (!configFile[currentEnv][key] && _.isEmpty(configFile[currentEnv][key])) {
       throw new Error(`Key "${key}" is not set for environment "${currentEnv}"`);
     }
     return configFile[currentEnv][key];
@@ -98,15 +98,15 @@ const UTILS = {
 
   async performRequest(params) {
 
-    if (isEmpty(params)) {
+    if (_.isEmpty(params)) {
       throw new Error('No params were provided');
     }
     const method = params.method || null;
     let endpoint = params.endpoint || null;
 
     let data;
-    if (!isEmpty(params.data)) {
-      data = startsWith(params.data, '@') ? fs.readFileSync(params.data.replace('@', ''), 'utf8') : params.data;
+    if (!_.isEmpty(params.data)) {
+      data = _.startsWith(params.data, '@') ? fs.readFileSync(params.data.replace('@', ''), 'utf8') : params.data;
     }
 
     if (!method || !endpoint) {
@@ -122,7 +122,7 @@ const UTILS = {
     }
 
     //preventing double "/""
-    endpoint = startsWith(params.endpoint, '/') ? params.endpoint : `/${params.endpoint}`;
+    endpoint = _.startsWith(params.endpoint, '/') ? params.endpoint : `/${params.endpoint}`;
 
     const res = await axios({
       method: method.toUpperCase(),
@@ -136,6 +136,58 @@ const UTILS = {
 
     const response = await res.data;
     return response;
+  },
+
+  getActions() {
+    const defaultActionsPath = path.join(__dirname, '../actions');
+
+    let actionsPath = [defaultActionsPath];
+
+    const customActionsPath = UTILS.readConfig().customActionsPath;
+
+    actionsPath = _.union(
+      actionsPath,
+      _.isEmpty(customActionsPath) ? [] : customActionsPath
+    );
+
+    let files = [];
+    for (const action of actionsPath) {
+      files = _.union(
+        files,
+        recursiveReadSync(action)
+      );
+    }
+
+    const actionsDetails = [];
+    const finalActions = [];
+
+    // reading default actions from cli
+    for (const file of files) {
+      const action = require(file);
+      finalActions.push(action);
+      const filtered = _.find(actionsDetails, (o) => { return _.isEqual(o.command, action.command); });
+
+      //checking if the command already exists
+      const commandExists = filtered ? true : false;
+
+      if (commandExists) {
+        console.log(
+          `Duplicate command provided, commands should be unique!
+          command "${action.command}"
+          from ${file}
+          already exists
+          it was originally added from: ${filtered.path}`
+        );
+        throw new Error('Duplicate command provided');
+
+      } else {
+        actionsDetails.push({
+          command: action.command,
+          path: file,
+        });
+      }
+    }
+    return finalActions;
   },
 };
 

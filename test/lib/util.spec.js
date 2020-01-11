@@ -144,7 +144,7 @@ describe('#src/lib/utils/lib/performRequest', () => {
 });
 
 describe('#src/lib/utils/lib/readInternalCliFile', () => {
-  after(() => {
+  afterEach(() => {
     sinon.restore();
   });
 
@@ -161,19 +161,21 @@ describe('#src/lib/utils/lib/readInternalCliFile', () => {
 });
 
 describe('#src/lib/utils/lib/writeInternalCliFile', () => {
-  after(() => {
+  afterEach(() => {
     sinon.restore();
   });
 
-  it('should throw error if failed to read internal cli file', () => {
+  it('should throw error if failed to write cli file', (done) => {
 
     const fnStub = sinon.stub().throws(new Error('muhahaha'));
     sinon.replace(fs, 'writeFileSync', fnStub);
 
     try {
       writeInternalCliFile('batman');
+      done('nooo');
     } catch (e) {
       expect(e.toString()).toContain('Failed to write file');
+      done();
     }
   });
 });
