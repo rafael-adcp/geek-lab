@@ -7,7 +7,7 @@ const startsWith = require('lodash/startsWith');
 
 const UTILS = {
   getUserDirectory() {
-    const homePath = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
+    const homePath = require('os').homedir();
     return path.join(`${homePath}/geek-lab_local`);
   },
 
