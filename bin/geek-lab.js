@@ -3,69 +3,39 @@ const path = require('path');
 const updateNotifier = require('update-notifier');
 const toString = require('lodash/toString');
 const isEmpty = require('lodash/isEmpty');
-const isEqual = require('lodash/isEqual');
-const filter = require('lodash/filter');
+const find = require('lodash/find');
 
 const yargs = require('yargs');
-const recursiveReadSync = require('recursive-readdir-sync');
 const UTILS = require('../src/lib/utils');
-
-function commandExists(command, listCommands) {
-  const filtered = filter(listCommands, function(o) { return isEqual(o.command, command); });
-
-  //checking if the command already exists
-  return isEqual(filtered.length, 0) ? false : true;
-}
 
 const pkg = require(path.join(__dirname, '../package.json'));
 
 updateNotifier({ pkg, updateCheckInterval: 1000 }).notify();
 
-const actionsPath = path.join(__dirname, '../src/actions');
+const actions = UTILS.getActions();
 
-const files = recursiveReadSync(actionsPath);
-
-const actionsDetails = [];
-
-// reading default actions from cli
-for (const file of files) {
-  const action = require(file);
-
-  if (commandExists(action.command, actionsDetails)) {
-    console.log(
-      `Duplicate command provided, commands should be unique!
-      command "${action.command}"
-      from ${file}
-      already exists
-      it was originally added from: ${actionsDetails[action.command]}`
-    );
-    throw new Error('Duplicate command provided');
-
-  } else {
-    actionsDetails.push({
-      command: action.command,
-      path: file,
-    });
-    /*
-      we cant use
-      .commandDir(rootPath, { recurse: true }) because we need to know all the commands to prevent
-      command colisions
-    */
-    yargs
-      .command(action);
-  }
+for (const action of actions) {
+  /*
+    we cant use
+    .commandDir(rootPath, { recurse: true }) because we need to know all the commands to prevent
+    command colisions
+  */
+  yargs
+    .command(action);
 }
 
 const provided = toString(
   Array.prototype.slice.call(process.argv, 2)[0]
 );
 
+const commandExists = find(actions, (o) => { return o.command === provided; });
+
 //showing cli tool help when an invalid command is provided
 if (
   !isEmpty(provided) &&
   provided !== '--help' && //yargs default param to show help
   provided !== '--version' && //yargs default param to show version
-  !commandExists(provided, actionsDetails) //if command donot exist
+  !commandExists //if command donot exist
 ) {
   console.log(`Invalid command provided "${provided}", see available options below`);
   yargs.showHelp();

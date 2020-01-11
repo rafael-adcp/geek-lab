@@ -1,6 +1,5 @@
 const execSync = require('child_process').execSync;
 const expect = require('expect');
-const proxyquire = require('proxyquire');
 
 const execBin = require('../helper');
 
@@ -50,20 +49,6 @@ describe('#bin', () => {
       expect(res.toString()).toContain('--help');
       expect(res.toString()).toContain('--version');
 
-    }
-  });
-
-  it('should throw error if a duplicated action appears', (done) => {
-    try {
-      proxyquire('../../bin/geek-lab.js', {
-        'lodash/filter': () => {
-          return [1, 2, 3];
-        },
-      });
-      done('this shouldnt happen');
-    } catch (e) {
-      expect(e.toString()).toContain('Duplicate command provided');
-      done();
     }
   });
 });

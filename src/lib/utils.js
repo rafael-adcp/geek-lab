@@ -4,6 +4,11 @@ const moment = require('moment');
 const isEmpty = require('lodash/isEmpty');
 const axios = require('axios');
 const startsWith = require('lodash/startsWith');
+const recursiveReadSync = require('recursive-readdir-sync');
+const isEqual = require('lodash/isEqual');
+const filter = require('lodash/filter');
+const union = require('lodash/union');
+const find = require('lodash/find');
 
 const UTILS = {
   getUserDirectory() {
@@ -136,6 +141,63 @@ const UTILS = {
 
     const response = await res.data;
     return response;
+  },
+
+  getActions() {
+    const defaultActionsPath = path.join(__dirname, '../actions');
+
+    let actionsPath = [defaultActionsPath];
+
+    const customActionsPath = UTILS.readConfig().customActionsPath;
+
+    actionsPath = union(
+      actionsPath,
+      isEmpty(customActionsPath) ? [] : customActionsPath
+    );
+
+    let files = [];
+    for (const action of actionsPath) {
+      files = union(
+        files,
+        recursiveReadSync(action)
+      );
+    }
+
+    const actionsDetails = [];
+    const finalActions = [];
+
+    // reading default actions from cli
+    for (const file of files) {
+      const action = require(file);
+      finalActions.push(action);
+
+      const filtered = filter(actionsDetails, function (o) { return isEqual(o.command, action.command); });
+
+      //checking if the command already exists
+      const commandExists = isEqual(filtered.length, 0) ? false : true;
+
+      if (commandExists) {
+        const originallyAddedFrom = find(actionsDetails, (o => {
+          return isEqual(o.command, action.command);
+        }));
+
+        console.log(
+          `Duplicate command provided, commands should be unique!
+          command "${action.command}"
+          from ${file}
+          already exists
+          it was originally added from: ${originallyAddedFrom.path}`
+        );
+        throw new Error('Duplicate command provided');
+
+      } else {
+        actionsDetails.push({
+          command: action.command,
+          path: file,
+        });
+      }
+    }
+    return finalActions;
   },
 };
 

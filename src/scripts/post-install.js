@@ -19,6 +19,7 @@ if (!fs.existsSync(localFolderPath)) {
       'collectMetrics': true,
       'token': null,
       'tokenExpires': null,
+      'customActionsPath': [],
       'dev': {
         'apiUrl': 'http://www.my_website.com',
         'apiAuthenticationExpiresInMinutes': 120,
