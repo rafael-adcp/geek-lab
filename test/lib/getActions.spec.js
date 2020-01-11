@@ -1,6 +1,7 @@
 
 const expect = require('expect');
 const sinon = require('sinon');
+const path = require('path');
 
 const {
   getActions,
@@ -16,6 +17,17 @@ describe('#src/lib/utils/lib/getActions', () => {
   it('shoul handle when customActionsPath is empty', () => {
     const readConfigtub = sinon.stub().returns({
       customActionsPath: [],
+    });
+    sinon.replace(utils, 'readConfig', readConfigtub);
+    const actions = getActions();
+    expect(actions).not.toBe(null);
+  });
+
+  it('should handle custom actions path when provided', () => {
+    const readConfigtub = sinon.stub().returns({
+      customActionsPath: [
+        path.resolve(__dirname, '../../src/actions/'),
+      ],
     });
     sinon.replace(utils, 'readConfig', readConfigtub);
     const actions = getActions();
