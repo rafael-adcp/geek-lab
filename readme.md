@@ -1,5 +1,5 @@
 # Geek Lab
-**TBD**
+
 Quickest way to:
 - ramp someone to a new project / organization.
 - swap between projects and executing your favorite scripts
@@ -14,3 +14,5 @@ Pros:
 ```
 npm i -g geek-lab
 ```
+
+[Check out our docs...](https://github.com/rafael-adcp/geek-lab/tree/master/docs)
