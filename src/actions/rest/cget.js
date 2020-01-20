@@ -16,9 +16,12 @@ exports.handler = async (argv) => {
     throw new Error('Parameter --endpoint cant be empty');
   }
   console.log(
-    await UTILS.performRequest({
-      method: 'GET',
-      endpoint: argv.endpoint,
-    })
+    JSON.stringify(
+      await UTILS.performRequest({
+        method: 'GET',
+        endpoint: argv.endpoint,
+      })
+      , null, 2)
+
   );
 };

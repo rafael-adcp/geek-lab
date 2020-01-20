@@ -18,7 +18,7 @@ exports.handler = async () => {
       apiResponse = await UTILS.performRequest({
         method: 'POST',
         endpoint: UTILS.getConfigValue('apiAuthenticationEndpoint'),
-        data: JSON.stringify(UTILS.getConfigValue('apiAuthenticationJson')),
+        data: JSON.parse(UTILS.getConfigValue('apiAuthenticationJson')),
       });
     } catch (e) {
       console.log(e.toString());

@@ -17,10 +17,12 @@ exports.handler = async (argv) => {
   }
 
   console.log(
-    await UTILS.performRequest({
-      method: 'POST',
-      endpoint: argv.endpoint,
-      data: argv.json,
-    })
+    JSON.stringify(
+      await UTILS.performRequest({
+        method: 'POST',
+        endpoint: argv.endpoint,
+        data: argv.json,
+      })
+      , null, 2)
   );
 };
