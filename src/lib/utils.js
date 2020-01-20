@@ -130,6 +130,7 @@ const UTILS = {
       json: true,
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': UTILS.readConfig().token,
       },
       data: data,
     });

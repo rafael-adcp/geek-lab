@@ -17,9 +17,12 @@ exports.handler = async (argv) => {
   }
 
   console.log(
-    await UTILS.performRequest({
-      method: 'DELETE',
-      endpoint: argv.endpoint,
-    })
+    JSON.stringify(
+      await UTILS.performRequest({
+        method: 'DELETE',
+        endpoint: argv.endpoint,
+      })
+      , null, 2)
+
   );
 };

@@ -40,12 +40,7 @@ describe('#actions/auth', () => {
         'apiAuthenticationExpiresInMinutes': 120,
         'apiAuthenticationEndpoint': 'aaa',
         'apiTokenResponseField': 'bbb',
-        'apiAuthenticationJson': {
-          auth: {
-            username: 'aaa',
-            password: 'bbb',
-          },
-        },
+        'apiAuthenticationJson': '{ "auth": { "username": "aaa", "password": "bbb" } }',
       },
     });
 
@@ -67,12 +62,7 @@ describe('#actions/auth', () => {
         'apiAuthenticationExpiresInMinutes': 120,
         'apiAuthenticationEndpoint': '/200',
         'apiTokenResponseField': 'bbb',
-        'apiAuthenticationJson': {
-          auth: {
-            username: 'aaa',
-            password: 'bbb',
-          },
-        },
+        'apiAuthenticationJson': '{ "auth": { "username": "aaa", "password": "bbb" } }',
       },
     });
 
@@ -94,12 +84,7 @@ describe('#actions/auth', () => {
         'apiAuthenticationExpiresInMinutes': 120,
         'apiAuthenticationEndpoint': '/200',
         'apiTokenResponseField': 'token',
-        'apiAuthenticationJson': {
-          auth: {
-            username: 'aaa',
-            password: 'bbb',
-          },
-        },
+        'apiAuthenticationJson': '{ "auth": { "username": "aaa", "password": "bbb" } }',
       },
     });
 
