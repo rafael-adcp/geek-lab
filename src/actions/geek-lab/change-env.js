@@ -4,18 +4,14 @@ exports.describe = 'swap cli between environments';
 exports.builder = (yargs) => yargs
   .example('$0 change-env --env prod', 'move cli to uses production config')
   .example('$0 change-env --env my-awesome-project', 'move cli to uses my-awesome-project config')
-  .option('env', { describe: 'environment', type: 'string' });
+  .option('env', { describe: 'environment', type: 'string' })
+  .demandOption('env', 'Please provide parameter --env');
 
 const UTILS = require('../../lib/utils');
-
-const isEmpty = require('lodash/isEmpty');
 
 exports.handler = (argv) => {
   const configFileContent = UTILS.readConfig();
 
-  if (isEmpty(argv.env)) {
-    throw new Error('Parameter env cant be empty');
-  }
   const environment = argv.env;
 
   if (!configFileContent[environment]) {
