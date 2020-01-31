@@ -4,18 +4,13 @@ exports.restAction = 'DELETE';
 
 exports.builder = (yargs) => yargs
   .option('url', { describe: 'endpoint to make a DELETE request', demanOption: true, type: 'string' })
+  .demandOption('url', 'Please provide parameter --url')
   .example('$0 cdelete --endpoint blah')
   .example('$0 cdelete blah');
-
-const isEmpty = require('lodash/isEmpty');
 
 const UTILS = require('../../lib/utils');
 
 exports.handler = async (argv) => {
-  if (!argv || isEmpty(argv.endpoint)) {
-    throw new Error('Parameter --endpoint cant be empty');
-  }
-
   console.log(
     JSON.stringify(
       await UTILS.performRequest({

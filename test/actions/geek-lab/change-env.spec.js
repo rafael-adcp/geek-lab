@@ -13,11 +13,6 @@ describe('#actions/geek-lab/change-env', () => {
   [
     {
       command: changeEnv,
-      errorMessage: 'Parameter env cant be empty',
-      testName: 'should throw error if env isnt provided',
-    },
-    {
-      command: changeEnv,
       params: { env: uuidv1() },
       errorMessage: 'Environment dont exist on cli configuration',
       testName: 'should throw an error if env isnt available on cli config',
