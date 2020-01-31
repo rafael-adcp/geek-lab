@@ -12,7 +12,7 @@ const pkg = require(path.join(__dirname, '../package.json'));
 
 updateNotifier({ pkg, updateCheckInterval: 1000 }).notify();
 
-const actions = UTILS.getActions();
+const actions = UTILS.getAllActions();
 
 for (const action of actions) {
   /*

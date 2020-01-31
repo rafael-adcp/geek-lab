@@ -139,25 +139,41 @@ const UTILS = {
     return response;
   },
 
-  getActions() {
-    const defaultActionsPath = path.join(__dirname, '../actions');
+  getActionsFromPath(paths) {
+    let files = [];
+    for (const actionPath of paths) {
+      files = _.union(
+        files,
+        recursiveReadSync(actionPath)
+      );
+    }
+    return files;
+  },
 
-    let actionsPath = [defaultActionsPath];
+  getDefaultActionsPath() {
+    return path.join(__dirname, '../actions');
+  },
 
-    const customActionsPath = UTILS.readConfig().customActionsPath;
+  getCustomActionsPath() {
+    return _.isEmpty(UTILS.readConfig().customActionsPath)
+      ? [] : UTILS.readConfig().customActionsPath;
+  },
 
-    actionsPath = _.union(
-      actionsPath,
-      _.isEmpty(customActionsPath) ? [] : customActionsPath
+  getAllActions() {
+    const defaultActionsPath = UTILS.getDefaultActionsPath();
+    const defaultActions = UTILS.getActionsFromPath([
+      defaultActionsPath,
+    ]);
+
+    const customActions = UTILS.getActionsFromPath(
+      UTILS.getCustomActionsPath()
     );
 
     let files = [];
-    for (const action of actionsPath) {
-      files = _.union(
-        files,
-        recursiveReadSync(action)
-      );
-    }
+    files = _.union(
+      defaultActions,
+      customActions
+    );
 
     const actionsDetails = [];
     const finalActions = [];
