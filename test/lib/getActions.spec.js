@@ -4,12 +4,12 @@ const sinon = require('sinon');
 const path = require('path');
 
 const {
-  getActions,
+  getAllActions,
 } = require('../../src/lib/utils');
 
 const utils = require('../../src/lib/utils');
 
-describe('#src/lib/utils/lib/getActions', () => {
+describe('#src/lib/utils/lib/getAllActions', () => {
   afterEach(() => {
     sinon.restore();
   });
@@ -19,7 +19,7 @@ describe('#src/lib/utils/lib/getActions', () => {
       customActionsPath: [],
     });
     sinon.replace(utils, 'readConfig', readConfigtub);
-    const actions = getActions();
+    const actions = getAllActions();
     expect(actions).not.toBe(null);
   });
 
@@ -30,7 +30,7 @@ describe('#src/lib/utils/lib/getActions', () => {
       ],
     });
     sinon.replace(utils, 'readConfig', readConfigtub);
-    const actions = getActions();
+    const actions = getAllActions();
     expect(actions).not.toBe(null);
   });
 
@@ -50,7 +50,7 @@ describe('#src/lib/utils/lib/getActions', () => {
     sinon.replace(lodash, 'find', findStub);
 
     try {
-      getActions();
+      getAllActions();
       done('nop');
     } catch (e) {
       expect(e.toString()).toBe('Error: Duplicate command provided');
