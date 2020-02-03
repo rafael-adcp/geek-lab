@@ -33,12 +33,16 @@
   },
   "dependencies": {
     "axios": "^0.19.1",
+    "billboard.js": "^1.11.1",
+    "bootstrap": "^4.4.1",
+    "d3": "^5.15.0",
+    "handlebars": "^4.7.2",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "recursive-readdir-sync": "^1.0.6",
     "sinon": "^8.0.4",
     "update-notifier": "^4.0.0",
-    "uuid": "^3.3.3",
+    "uuid": "^3.4.0",
     "yargs": "^15.1.0"
   },
   "devDependencies": {
