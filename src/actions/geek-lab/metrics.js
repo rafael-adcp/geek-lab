@@ -3,8 +3,8 @@ exports.describe = 'show current metrics for cli';
 
 exports.builder = (yargs) => yargs
   .option('env', { describe: 'environment', type: 'string' })
-  .example('$0 metrics', 'print the metrics as they are from config file')
-  .example('$0 metrics --pretty', 'outputs and amazing graph to show the metrics');
+  .example('$0 metrics', 'print the metrics as they are from metrics file')
+  .example('$0 metrics --pretty', 'outputs an amazing graph to show the metrics');
 
 const handlebars = require('handlebars');
 const fs = require('fs');
@@ -19,8 +19,8 @@ exports.handler = (argv) => {
   const metricsFileContent = UTILS.readMetricsFile();
   let msg;
   if (argv.pretty) {
-    // set up handlebars template
 
+    // set up handlebars template
     const source = fs.readFileSync(
       path.resolve(__dirname, '../../handlebars/metrics_template.hb')
     ).toString();
