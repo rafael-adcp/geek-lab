@@ -44,16 +44,21 @@ const UTILS = {
     return UTILS.readInternalCliFile('config_geek-lab.json');
   },
 
+  readMetricsFile() {
+    return UTILS.readInternalCliFile('metrics_geek-lab.json');
+  },
+
   collectMetrics(command) {
 
     //allowing the user to opt in / out from metrics
+
     if (UTILS.readConfig().collectMetrics) {
 
       // when the cli is called without params, just to prevent metrics to add ""
       command = _.isEmpty(command) ? 'geek-lab' : command;
 
       const fileName = 'metrics_geek-lab.json';
-      const metricsFileContent = UTILS.readInternalCliFile(fileName);
+      const metricsFileContent = UTILS.readMetricsFile();
 
       if (!metricsFileContent.totalUsage[command]) {
         //creating entry for command if not there yet
