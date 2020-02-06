@@ -12,6 +12,8 @@ const uuidv1 = require('uuid/v1');
 const path = require('path');
 
 const UTILS = require('../../lib/utils');
+const find = require('lodash/find');
+const isEqual = require('lodash/isEqual');
 
 exports.handler = (argv) => {
   const metricsFileContent = UTILS.readMetricsFile();
@@ -28,6 +30,7 @@ exports.handler = (argv) => {
 
     const handlebarData = {
       generatedOverallGraph: [],
+      generatedeEachActionlGraph: [],
     };
 
     const totalUsage = [];
@@ -44,7 +47,7 @@ exports.handler = (argv) => {
 
     handlebarData.generatedOverallGraph.push({
       data: JSON.stringify(totalUsage),
-      id: 'graphic_' + uuidv1().replace(/\-/g, '_'),
+      id: 'graphic_' + uuidv1().replace(/-/g, '_'),
       name: 'Total Usage',
       type: 'donut',
     });
@@ -75,12 +78,41 @@ exports.handler = (argv) => {
 
     handlebarData.generatedOverallGraph.push({
       data: JSON.stringify(actionUsagePerDay),
-      id: 'graphic_' + uuidv1().replace(/\-/g, '_'),
+      id: 'graphic_' + uuidv1().replace(/-/g, '_'),
       name: 'Usage evolution per day',
       type: 'line',
       categories: JSON.stringify(availableDays),
     });
-    console.log(handlebarData, null, 2);
+
+    let i = 0;
+    for (const action of availableActions) {
+      let openNewRow = false;
+      let closeRow = false;
+
+      if (i === 0) {
+        openNewRow = true;
+      } else if ((i % 2) === 0) {
+        closeRow = true;
+      }
+      const currentActionMetrics = find(actionUsagePerDay, (o) => {
+        return isEqual(o[0], action);
+      });
+
+      handlebarData.generatedeEachActionlGraph.push({
+        data: JSON.stringify(currentActionMetrics),
+        id: 'graphic_each_action' + uuidv1().replace(/-/g, '_'),
+        name: action,
+        type: 'line',
+        categories: JSON.stringify(availableDays),
+        openNewRow: openNewRow,
+        closeRow: closeRow,
+      });
+
+      i++;
+      if (i > 2) {
+        i = 0;
+      }
+    }
 
     // call template as a function, passing in your data as the context
     const parsedString = template(
@@ -88,7 +120,7 @@ exports.handler = (argv) => {
     );
 
     const reportDestination = path.resolve(__dirname, `../../handlebars/awesome_metrics_graph_${uuidv1()}.html`);
-
+    msg = `Html report generated and located at ${reportDestination}`;
     fs.writeFileSync(reportDestination, parsedString);
   } else {
     msg = JSON.stringify(metricsFileContent, null, 2);

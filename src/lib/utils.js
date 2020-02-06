@@ -54,7 +54,6 @@ const UTILS = {
 
     if (UTILS.readConfig().collectMetrics) {
 
-
       // when the cli is called without params, just to prevent metrics to add ""
       command = _.isEmpty(command) ? 'geek-lab' : command;
 

@@ -18,85 +18,133 @@
 
     <body>
         <div class="container-fluid">
-            {{#each generatedOverallGraph}}
-              <div class="row">
+            <h1>Geek lab metrics</h1>
+            <hr/>
+            <div class="row">
+              {{#each generatedOverallGraph}}
                   <div class="col-md-6">
-                      <div id="{{id}}"></div>
-                      <script>
-                          var chart = bb.generate({
-                              data: {
-                                   type: "{{ type }}",
-                                  columns: {{{ data }}} ,
-                                  labels: true
-                              },
-                              axis : {
-                                x: {
-                                  label: {
-                                      text: 'date',
-                                  },
-                                  type: "category",
-                                  {{#if categories}}
-                                  categories: {{{ categories }}} ,
-                                  {{/if}}
-                                  tick: {
-                                    fit: false,
-                                  },
-                                },
-                                y: {
-                                  label: {
-                                    text: 'value',
-                                  },
-                                  {{#if menor}}
-                                  min: {{ menor }}
-                                  {{/if}}
-                                }
-                              },
-                              bindto: '#{{id}}',
-                              title: {
-                                  text: '{{name}}'
-                              },
-                              {{#if media}}
-                                grid: {
-                                    x: {
-                                        show: true
-                                    },
-
-                                    y: {
-                                        show: true,
-                                        lines: [
-                                            { value: {{media}}, class: '', text: 'Media: {{media}}'},
-
-                                        ]
-                                    }
-                                },
-                              {{/if}}
-                              legend: {
-                                  show: true
-                              }
-                          });
-                      </script>
-                      {{#if metrics}}
-                        <table class="table table-bordered" style = 'text-align: center'>
-                        <thead>
-                            <tr>
-                                <th scope="col">Menor</th>
-                                <th scope="col">Media</th>
-                                <th scope="col">Maior</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>{{menor}}</td>
-                                <td>{{media}}</td>
-                                <td>{{maior}}</td>
-                            </tr>
-                        </tbody>
-                        </table>
-                      {{/if}}
+                    <div id="{{id}}"></div>
+                    <script>
+                      var chart = bb.generate({
+                        data: {
+                          type: "{{ type }}",
+                          columns: {{{ data }}} ,
+                          labels: true
+                        },
+                        "tooltip": {
+                          "order": "desc"
+                        },
+                        zoom: {
+                          enabled: {
+                              type: "drag"
+                          }
+                        },
+                        axis : {
+                          x: {
+                            label: {
+                              text: 'date',
+                            },
+                            type: "category",
+                            {{#if categories}}
+                              categories: {{{ categories }}} ,
+                            {{/if}}
+                            tick: {
+                              fit: true,
+                            },
+                          },
+                          y: {
+                            label: {
+                              text: 'usage',
+                            },
+                          }
+                        },
+                        bindto: '#{{id}}',
+                        title: {
+                          text: '{{name}}'
+                        },
+                        grid: {
+                          x: {
+                            show: true
+                          },
+                          y: {
+                            show: true,
+                          }
+                        },
+                        legend: {
+                          show: true
+                        }
+                      });
+                    </script>
                   </div>
+              {{/each}}
+
+            </div>
+            <hr/>
+            {{#each generatedeEachActionlGraph}}
+              {{#if openNewRow}}
+                <div class = "row">
+              {{/if}}
+                <div class="col-md-4">
+                  <div id="{{id}}"></div>
+                  <script>
+                    var chart = bb.generate({
+                      data: {
+                        type: "{{ type }}",
+                        columns: [
+                          {{{ data }}}
+                        ],
+                        labels: true
+                      },
+                      "tooltip": {
+                        "order": "desc"
+                      },
+                      zoom: {
+                        enabled: {
+                            type: "drag"
+                        }
+                      },
+                      axis : {
+                        x: {
+                          label: {
+                            text: 'date',
+                          },
+                          type: "category",
+
+                          categories: {{{ categories }}} ,
+
+                          tick: {
+                            fit: true,
+                          },
+                        },
+                        y: {
+                          label: {
+                            text: 'usage',
+                          },
+                        }
+                      },
+                      bindto: '#{{id}}',
+                      title: {
+                        text: 'Usage of "{{name}}" per day'
+                      },
+                      grid: {
+                        x: {
+                          show: true
+                        },
+                        y: {
+                          show: true,
+                        }
+                      },
+                      legend: {
+                        show: false
+                      }
+                    });
+                  </script>
+                </div>
+              {{#if closeRow}}
               </div>
-            {{/each}}
-            <hr>
+              <hr/>
+              {{/if}}
+          {{/each}}
         </div>
     </body>
 </html>
