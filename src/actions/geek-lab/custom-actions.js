@@ -10,7 +10,7 @@ exports.handler = () => {
   const msg = `Custom actions are located at:` +
     `\n\n${UTILS.getActionsFromPath(
       UTILS.readConfig().customActionsPath
-    )}`;
+    ).join('\n')}`;
 
   console.log(msg);
   return msg;

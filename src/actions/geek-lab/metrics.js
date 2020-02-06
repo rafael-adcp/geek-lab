@@ -2,7 +2,7 @@ exports.command = 'metrics';
 exports.describe = 'show current metrics for cli';
 
 exports.builder = (yargs) => yargs
-  .option('env', { describe: 'environment', type: 'string' })
+  .option('pretty', { describe: 'whether or not to generate a html report', type: 'boolean' })
   .example('$0 metrics', 'print the metrics as they are from metrics file')
   .example('$0 metrics --pretty', 'outputs an amazing graph to show the metrics');
 
