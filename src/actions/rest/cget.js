@@ -3,8 +3,8 @@ exports.describe = 'performs a GET request';
 exports.restAction = 'GET';
 
 exports.builder = (yargs) => yargs
-  .option('url', { describe: 'endpoint to make a get request', demanOption: true, type: 'string' })
-  .demandOption('url', 'Please provide parameter --url')
+  .option('endpoint', { describe: 'endpoint to make a get request', demanOption: true, type: 'string' })
+  .demandOption('endpoint', 'Please provide parameter --endpoint')
   .example('$0 cget --endpoint blah')
   .example('$0 cget blah');
 
