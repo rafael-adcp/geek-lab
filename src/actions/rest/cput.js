@@ -3,9 +3,9 @@ exports.describe = 'performs a PUT request';
 exports.restAction = 'PUT';
 
 exports.builder = (yargs) => yargs
-  .option('url', { describe: 'endpoint to make a PUT request', demanOption: true, type: 'string' })
+  .option('endpoint', { describe: 'endpoint to make a PUT request', demanOption: true, type: 'string' })
   .option('json', { describe: 'json data to send', demanOption: true, type: 'string' })
-  .demandOption('url', 'Please provide parameter --url')
+  .demandOption('endpoint', 'Please provide parameter --endpoint')
   .demandOption('json', 'Please provide parameter --json')
   .example('$0 cput --endpoint blah --json @foo.json');
 
