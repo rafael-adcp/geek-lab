@@ -4,6 +4,7 @@ const moment = require('moment');
 const axios = require('axios');
 const recursiveReadSync = require('recursive-readdir-sync');
 const _ = require('lodash');
+const mysql2 = require('mysql2/promise');
 
 const UTILS = {
   getUserDirectory() {
@@ -210,6 +211,29 @@ const UTILS = {
       }
     }
     return finalActions;
+  },
+
+  async performMySQLQuery(query) {
+    const connection = await mysql2.createConnection({
+      host: UTILS.getConfigValue('mysqlHost'),
+      user: UTILS.getConfigValue('mysqlUser'),
+      password: UTILS.getConfigValue('mysqlPassword'),
+    });
+
+    const [rows, fields] = await connection.execute(query);
+
+    await connection.destroy();
+
+    return {
+      rows: Object.values(
+        JSON.parse(
+          JSON.stringify(
+            rows
+          )
+        )
+      ),
+      fields: fields,
+    };
   },
 };
 
