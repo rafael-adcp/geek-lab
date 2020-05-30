@@ -16,3 +16,16 @@ npm i -g geek-lab
 ```
 
 [Check out our docs...](https://github.com/rafael-adcp/geek-lab/tree/master/docs)
+
+## Building / Tagging / Publishing
+```
+git fetch
+git pull origin master
+
+npm version patch
+npm publish
+
+git push origin master --no-verify
+git tag 1.2.2
+git push origin 1.2.2 --no-verify
+```
