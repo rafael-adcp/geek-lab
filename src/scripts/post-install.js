@@ -25,6 +25,9 @@ if (!fs.existsSync(localFolderPath)) {
         'apiAuthenticationExpiresInMinutes': 120,
         'apiAuthenticationEndpoint': '/auth',
         'apiTokenResponseField': 'bbb',
+        'mysqlHost': 'localhost',
+        'mysqlUser': 'my_user',
+        'mysqlPassword': 'my_psw',
         'apiAuthenticationJson': {
           auth: {
             username: 'aaa',

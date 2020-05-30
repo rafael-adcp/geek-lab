@@ -2,6 +2,7 @@ const expect = require('expect');
 const sinon = require('sinon');
 const fs = require('fs');
 const moment = require('moment');
+const mysql2 = require('mysql2/promise');
 
 const {
   getConfigValue,
@@ -9,6 +10,7 @@ const {
   readInternalCliFile,
   writeInternalCliFile,
   collectMetrics,
+  performMySQLQuery,
 } = require('../../src/lib/utils');
 
 const utils = require('../../src/lib/utils');
@@ -257,4 +259,75 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
 
   });
 
+});
+
+describe('#src/lib/utils/lib/performMySQLQuery', () => {
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should execute the given mysql query', (done) => {
+
+    const fnStub = sinon.stub().returns('foo');
+    sinon.replace(utils, 'getConfigValue', fnStub);
+
+    const fake = {};
+    fake.execute = (query) => {
+      return Promise.resolve('executed: ' + query);
+    };
+
+    fake.destroy = () => {
+      return Promise.resolve();
+    };
+
+    const mySqlStub = sinon.stub().resolves(fake);
+
+    sinon.replace(mysql2, 'createConnection', mySqlStub);
+
+    const executeStub = sinon.stub().resolves(
+      [
+        [
+          { id: 2, nome: 'aaaa' },
+          { id: 3, nome: 'rrewgrhewerh' },
+        ],
+        [{
+          catalog: 'def',
+          schema: 'test',
+          name: 'id',
+          orgName: 'id',
+          table: 'users',
+          orgTable: 'users',
+          characterSet: 63,
+          columnLength: 11,
+          columnType: 3,
+          flags: 16899,
+          decimals: 0,
+        },
+        {
+          catalog: 'def',
+          schema: 'test',
+          name: 'nome',
+          orgName: 'nome',
+          table: 'users',
+          orgTable: 'users',
+          characterSet: 224,
+          columnLength: 200,
+          columnType: 253,
+          flags: 4097,
+          decimals: 0,
+        }]]
+    );
+
+    sinon.replace(fake, 'execute', executeStub);
+
+    const query = 'some query in here';
+    performMySQLQuery(query).then((res) => {
+      const stubCalledParams = executeStub.getCall(0);
+      expect(res).not.toBe(null);
+      expect(executeStub.calledOnce).toBe(true);
+      expect(stubCalledParams.toString()).toContain(query);
+      done();
+    });
+  });
 });
