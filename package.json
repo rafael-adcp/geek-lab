@@ -32,7 +32,7 @@
     "gik": "./bin/geek-lab.js"
   },
   "dependencies": {
-    "axios": "^0.19.1",
+    "axios": "^0.21.1",
     "billboard.js": "^1.11.1",
     "bootstrap": "^4.4.1",
     "d3": "^5.15.0",
