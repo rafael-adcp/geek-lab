@@ -33,9 +33,9 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "billboard.js": "^1.11.1",
+    "billboard.js": "^3.6.0",
     "bootstrap": "^4.4.1",
-    "d3": "^5.15.0",
+    "d3": "^7.6.1",
     "handlebars": "^4.7.6",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
