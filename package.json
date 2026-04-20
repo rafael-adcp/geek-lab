@@ -27,6 +27,9 @@
     "geekl": "./bin/geek-lab.js",
     "gik": "./bin/geek-lab.js"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "axios": "^1.15.1",
     "billboard.js": "^3.18.0",
