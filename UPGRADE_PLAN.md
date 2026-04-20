@@ -2,50 +2,59 @@
 
 **Goal:** move `geek-lab` from Node 10.17 to Node 22 LTS (current active LTS as of 2026-04).
 
-**Branching model:** one feature branch per phase off `master`, open a PR, merge only when CI passes. Small, independent, reversible.
+**Branching model:** a single long-lived branch `chore/upgrade-baseline` holds all the work. Within that branch, each logical change is its own small commit (one dep group, one tooling bump, one fix per commit) so history is bisectable and reviewable step-by-step. The branch only merges to `master` once CI is fully green.
+
+**Commit discipline:**
+- One concern per commit (e.g. "upgrade mocha to v10", not "upgrade test tooling").
+- Conventional-style prefixes (`chore:`, `fix:`, `ci:`, `docs:`) to make `git log --oneline` scan-friendly.
+- Push early and often so GitHub Actions runs against each commit.
 
 ---
 
+All commits land on branch `chore/upgrade-baseline`. Phase numbers below describe the commit *groups* — each bullet is typically its own commit.
+
 ## Phase 0 — Baseline
-- Branch `chore/upgrade-baseline`.
-- Confirm `npm ci && npm run lint && npm test` pass as-is on Node 12 locally.
-- Capture `npm audit` output as a reference point.
-- Grep-verify which frontend deps are actually used (`d3`, `billboard.js`, `bootstrap`) — may be removable dead weight.
+- `docs: add Node upgrade plan`.
+- Confirm current state: lint passes, 48/49 tests pass on Node 22 (one flaky test hits a live URL), 52 `npm audit` findings.
+- Finding: `d3`/`billboard.js`/`bootstrap` only referenced via static `<script>` tags in `src/handlebars/metrics_template.hb` — no JS import surface, only file-path compat matters.
+- `fix(test): stub network in auth.spec shape-validation case` so CI can go green.
 
 ## Phase 1 — Widen CI matrix (safety net, no code changes)
-- Branch `ci/expand-matrix`.
-- Update `.github/workflows/nodejs.yml` matrix to add `18.x, 20.x, 22.x` alongside the old ones.
-- Bump `actions/checkout@v4` and `actions/setup-node@v4`.
-- This PR's failures map the real upgrade work.
+- `ci: add Node 18/20/22 to test matrix`.
+- `ci: bump actions/checkout and actions/setup-node to v4`.
+- Purpose: each subsequent commit will be validated against new Node versions while old ones still work. The matrix failures map the real upgrade work.
 
 ## Phase 2 — Dev tooling (low risk)
-- Branch `chore/upgrade-test-tooling`: `mocha 6→10`, `nyc 15→17`, drop unused `istanbul` (nyc supersedes it), evaluate `expect@24` (legacy) → replace with `chai` or node's built-in `assert`.
-- Branch `chore/upgrade-eslint`: `eslint 6→8` (staying on 8 avoids flat-config migration; jump to 9 later).
-- Branch `chore/replace-pre-push`: `pre-push@0.1.1` is unmaintained — swap for `husky` or drop entirely (CI already gates merges).
+- `chore: upgrade mocha 6 → 10`.
+- `chore: upgrade nyc 15 → 17`.
+- `chore: drop istanbul (superseded by nyc)`.
+- `chore: replace expect@24 with chai or node:assert`.
+- `chore: upgrade eslint 6 → 8` (flat-config jump to 9 deferred).
+- `chore: drop pre-push in favour of CI gating` (pre-push@0.1.1 is unmaintained).
 
-## Phase 3 — Runtime deps (one group per PR)
+## Phase 3 — Runtime deps (one commit per dep group)
 Each group is small, independent, and reversible:
-- `uuid 3→11` — breaking: named imports (`import { v4 } from 'uuid'`).
-- `axios 0.21→1.x` — breaking: error shape, some config keys.
-- `yargs 15→17`.
-- `update-notifier 4→7` — ESM-only; needs dynamic `import()` or stays pinned.
-- `sinon 8→19`.
-- `mysql2 2→3`.
-- `handlebars`, `lodash`, `moment` minor bumps. (`moment` is in maintenance mode — flag for later replacement with `dayjs`, out of scope here.)
-- `recursive-readdir-sync` — unmaintained; candidate for removal in favor of `fs.readdirSync({ recursive: true })` (Node 20+).
-- Frontend deps (`d3 5→7`, `bootstrap 4→5`, `billboard.js 1→3`) — only if Phase 0 confirms they're used.
+- `chore: upgrade uuid 3 → 11` — breaking: named imports (`const { v4 } = require('uuid')`).
+- `chore: upgrade axios 0.21 → 1.x` — breaking: error shape, some config keys.
+- `chore: upgrade yargs 15 → 17`.
+- `chore: upgrade update-notifier 4 → 7` — ESM-only; needs dynamic `import()`.
+- `chore: upgrade sinon 8 → 19`.
+- `chore: upgrade mysql2 2 → 3`.
+- `chore: bump handlebars/lodash/moment` (moment is in maintenance mode — flag for later replacement with `dayjs`, out of scope here).
+- `chore: drop recursive-readdir-sync for fs.readdirSync({ recursive: true })` (Node 20+).
+- `chore: upgrade d3/bootstrap/billboard.js` — only the static-asset paths matter; verify the template still resolves the files.
 
 ## Phase 4 — Flip to Node 22
-- Branch `chore/node-22`.
-- `.nvmrc` → `22`.
-- Add `"engines": { "node": ">=22" }` to `package.json`.
-- CI matrix → `[20.x, 22.x]` (drop 8/10/12/18).
-- Update `clean` script to use cross-platform delete (`rimraf`) so it works on Windows too.
+- `chore: set .nvmrc to 22`.
+- `chore: add engines.node >=22 in package.json`.
+- `ci: drop legacy Node versions from matrix` (keep `20.x, 22.x`).
+- `chore: replace rm -Rf in clean script with rimraf` (cross-platform).
 
 ## Phase 5 — Cleanup
-- `npm audit fix`.
-- Regenerate `package-lock.json`.
-- Update `readme.md` if it states a Node version.
+- `chore: npm audit fix` (only the ones that don't require breaking changes; the rest should be resolved by earlier phases).
+- `chore: regenerate package-lock.json`.
+- `docs: update readme with supported Node versions` if it states one.
+- Final commit: merge branch into `master` via PR once the full CI matrix is green.
 
 ---
 
