@@ -1,4 +1,4 @@
-const expect = require('expect');
+const { expect } = require('expect');
 const sinon = require('sinon');
 const fs = require('fs');
 const moment = require('moment');
@@ -205,12 +205,12 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
     sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
 
     collectMetrics('magicInMe');
-    const stubCalledParams = writeInternalCliFileStub.getCall(0);
+    const [, writtenData] = writeInternalCliFileStub.getCall(0).args;
+    const today = moment(new Date()).format('DD/MM/YYYY');
 
     expect(writeInternalCliFileStub.calledOnce).toBe(true);
-    expect(stubCalledParams.toString()).toContain(`{ ${moment(new Date()).format('DD/MM/YYYY')}: { magicInMe: 1 } }`);
-    expect(stubCalledParams.toString()).toContain('magicInMe: 1');
-
+    expect(writtenData.dailyUsage[today].magicInMe).toBe(1);
+    expect(writtenData.totalUsage.magicInMe).toBe(1);
   });
 
   it('should not track metrics if config variable is false', () => {
@@ -251,11 +251,12 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
     sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
 
     collectMetrics('magicInMe');
-    const stubCalledParams = writeInternalCliFileStub.getCall(0);
+    const [, writtenData] = writeInternalCliFileStub.getCall(0).args;
+    const today = moment(new Date()).format('DD/MM/YYYY');
 
     expect(writeInternalCliFileStub.calledOnce).toBe(true);
-    expect(stubCalledParams.toString()).toContain(`{ ${moment(new Date()).format('DD/MM/YYYY')}: { magicInMe: 2 } }`);
-    expect(stubCalledParams.toString()).toContain('magicInMe: 2');
+    expect(writtenData.dailyUsage[today].magicInMe).toBe(2);
+    expect(writtenData.totalUsage.magicInMe).toBe(2);
 
   });
 

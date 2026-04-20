@@ -1,4 +1,4 @@
-const expect = require('expect');
+const { expect } = require('expect');
 const sinon = require('sinon');
 const yargs = require('yargs');
 const cget = require('../../../src/actions/rest/cget');

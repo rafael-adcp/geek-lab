@@ -1,5 +1,5 @@
-const expect = require('expect');
-const uuidv1 = require('uuid/v1');
+const { expect } = require('expect');
+const { v1: uuidv1 } = require('uuid');
 const moment = require('moment');
 const yargs = require('yargs');
 const sinon = require('sinon');
@@ -58,15 +58,23 @@ describe('#actions/auth', () => {
       tokenExpires: null, // forcing it to be filled
       env: 'unitTests',
       unitTests: {
-        'apiUrl': 'https://httpstatuses.com',
+        'apiUrl': 'my_url_here',
         'apiAuthenticationExpiresInMinutes': 120,
-        'apiAuthenticationEndpoint': '/200',
+        'apiAuthenticationEndpoint': 'aaa',
         'apiTokenResponseField': 'bbb',
         'apiAuthenticationJson': '{ "auth": { "username": "aaa", "password": "bbb" } }',
       },
     });
 
     sinon.replace(utils, 'readConfig', readConfigStub);
+
+    const performRequestStub = sinon.stub().resolves({
+      response: {
+        status: 'OK',
+        // missing the configured apiTokenResponseField ('bbb') — triggers shape check
+      },
+    });
+    sinon.replace(utils, 'performRequest', performRequestStub);
 
     authAction.handler().catch((e) => {
       expect(e.toString()).toContain('Something wrong happend on authentication');

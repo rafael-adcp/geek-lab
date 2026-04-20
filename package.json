@@ -18,40 +18,37 @@
     "postinstall": "node ./src/scripts/post-install.js",
     "lint": "eslint .",
     "test": "nyc --reporter=html --reporter=text mocha \"test/**/*.spec.js\" --timeout 10000 --recursive --exit",
-    "clean": "rm -Rf node_modules/ && rm -f ./package-lock.json && npm cache clean -f && rm -Rf .nyc_output/ && rm -Rf coverage/",
+    "clean": "rimraf node_modules ./package-lock.json .nyc_output coverage && npm cache clean -f",
     "rebuild": "npm run clean && npm i"
   },
-  "pre-push": [
-    "lint",
-    "test"
-  ],
   "bin": {
     "geek-lab": "./bin/geek-lab.js",
     "glab": "./bin/geek-lab.js",
     "geekl": "./bin/geek-lab.js",
     "gik": "./bin/geek-lab.js"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
-    "axios": "^0.21.1",
-    "billboard.js": "^1.11.1",
-    "bootstrap": "^4.4.1",
-    "d3": "^5.15.0",
-    "handlebars": "^4.7.6",
-    "lodash": "^4.17.15",
-    "moment": "^2.24.0",
-    "mysql2": "^2.1.0",
-    "recursive-readdir-sync": "^1.0.6",
-    "sinon": "^8.0.4",
-    "update-notifier": "^4.0.0",
-    "uuid": "^3.4.0",
-    "yargs": "^15.3.1"
+    "axios": "^1.15.1",
+    "billboard.js": "^3.18.0",
+    "bootstrap": "^5.3.8",
+    "d3": "^7.9.0",
+    "handlebars": "^4.7.9",
+    "lodash": "^4.18.1",
+    "moment": "^2.30.1",
+    "mysql2": "^3.22.1",
+    "sinon": "^19.0.5",
+    "update-notifier": "^7.3.1",
+    "uuid": "^11.1.0",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "eslint": "^6.8.0",
-    "expect": "^24.9.0",
-    "istanbul": "^0.4.5",
-    "mocha": "^6.2.2",
-    "nyc": "^15.0.0",
-    "pre-push": "^0.1.1"
+    "eslint": "^8.57.1",
+    "expect": "^30.3.0",
+    "mocha": "^10.8.2",
+    "nyc": "^17.1.0",
+    "rimraf": "^6.1.3"
   }
 }
