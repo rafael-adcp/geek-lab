@@ -2,7 +2,6 @@ const path = require('path');
 const fs = require('fs');
 const moment = require('moment');
 const axios = require('axios');
-const recursiveReadSync = require('recursive-readdir-sync');
 const _ = require('lodash');
 const mysql2 = require('mysql2/promise');
 
@@ -148,10 +147,11 @@ const UTILS = {
   getActionsFromPath(paths) {
     let files = [];
     for (const actionPath of paths) {
-      files = _.union(
-        files,
-        recursiveReadSync(actionPath)
-      );
+      const entries = fs.readdirSync(actionPath, { recursive: true, withFileTypes: true });
+      const filePaths = entries
+        .filter((entry) => entry.isFile())
+        .map((entry) => path.join(entry.parentPath || entry.path, entry.name));
+      files = _.union(files, filePaths);
     }
     return files;
   },
