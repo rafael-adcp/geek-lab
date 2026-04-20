@@ -11,6 +11,7 @@ const pkg = require(path.join(__dirname, '../package.json'));
 
 // update-notifier is ESM-only since v6; fire-and-forget via dynamic import
 // so the rest of the CLI stays CJS and boots synchronously.
+/* istanbul ignore next: advisory side-effect, not a code path under test */
 import('update-notifier')
   .then(({ default: updateNotifier }) => updateNotifier({ pkg, updateCheckInterval: 1000 }).notify())
   .catch(() => { /* advisory check — never block the CLI */ });
