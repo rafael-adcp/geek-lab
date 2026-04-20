@@ -91,7 +91,22 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 9. `axios` call has a vestigial `json: true` option
+## 9. Dev-only audit findings remaining after the Node 22 upgrade
+
+**Observation:** after Phase 5 `npm audit fix`, two vulnerabilities remain, both in dev-only transitive deps:
+
+- `diff` (via `sinon@19`) — low severity, fixed in `sinon@21`.
+- `serialize-javascript` (via `mocha@10`) — high severity, fixed in `mocha@11`.
+
+Neither ships to end users (both are `devDependencies` or test-only transitives), but they surface in `npm audit`. Each fix is a one-major bump and was deliberately deferred out of the upgrade plan's Phase 5 (which excluded breaking changes).
+
+**Change:** `npm install --save-dev sinon@21 mocha@11`, then re-run the test suite to confirm no API breakage.
+
+**Effort:** trivial — one commit per bump.
+
+---
+
+## 10. `axios` call has a vestigial `json: true` option
 
 **Observation:** in `src/lib/utils.js` the `axios({ ... })` call passes `json: true`. Axios has never read that key — it's a leftover from `request`-era HTTP libs. It's harmless, but it misleads future readers.
 
