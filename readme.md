@@ -10,6 +10,9 @@ Pros:
 - Share usefull commands with the community / your team / or simply keep things to your self
 - Agnostic of language, call your `.py`, `.sh`, `.java`...
 
+## Requirements
+- Node.js **22** or newer (current active LTS).
+
 ## Instalation
 ```
 npm i -g geek-lab
