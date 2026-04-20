@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 const path = require('path');
-const updateNotifier = require('update-notifier');
 const toString = require('lodash/toString');
 const isEmpty = require('lodash/isEmpty');
 const find = require('lodash/find');
@@ -10,7 +9,11 @@ const UTILS = require('../src/lib/utils');
 
 const pkg = require(path.join(__dirname, '../package.json'));
 
-updateNotifier({ pkg, updateCheckInterval: 1000 }).notify();
+// update-notifier is ESM-only since v6; fire-and-forget via dynamic import
+// so the rest of the CLI stays CJS and boots synchronously.
+import('update-notifier')
+  .then(({ default: updateNotifier }) => updateNotifier({ pkg, updateCheckInterval: 1000 }).notify())
+  .catch(() => { /* advisory check — never block the CLI */ });
 
 const actions = UTILS.getAllActions();
 
