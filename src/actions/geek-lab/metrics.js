@@ -8,7 +8,7 @@ exports.builder = (yargs) => yargs
 
 const handlebars = require('handlebars');
 const fs = require('fs');
-const uuidv1 = require('uuid/v1');
+const { v1: uuidv1 } = require('uuid');
 const path = require('path');
 
 const UTILS = require('../../lib/utils');

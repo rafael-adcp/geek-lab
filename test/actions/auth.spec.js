@@ -1,5 +1,5 @@
 const { expect } = require('expect');
-const uuidv1 = require('uuid/v1');
+const { v1: uuidv1 } = require('uuid');
 const moment = require('moment');
 const yargs = require('yargs');
 const sinon = require('sinon');
