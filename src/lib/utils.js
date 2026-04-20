@@ -132,7 +132,6 @@ const UTILS = {
     const res = await axios({
       method: method.toUpperCase(),
       url: UTILS.getConfigValue('apiUrl') + endpoint,
-      json: true,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': UTILS.readConfig().token,
