@@ -33,9 +33,9 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ## 3. `eslint` 8 is end-of-life
 
-**Observation:** eslint 8 reached EOL in October 2024. We intentionally stayed on 8 during the Node upgrade to avoid the flat-config migration that v9 forces.
+**Observation:** eslint 8 reached EOL in October 2024. We intentionally stayed on 8 during the Node upgrade to avoid the flat-config migration that v9+ forces. Current latest is `eslint@10`.
 
-**Change:** migrate `.eslintrc` → `eslint.config.js` (flat config), upgrade to `eslint@9`.
+**Change:** migrate `.eslintrc` → `eslint.config.js` (flat config), upgrade to `eslint@10`.
 
 **Effort:** medium — mechanical but touches the entire rules block. There are automated migrators (`@eslint/migrate-config`).
 
@@ -51,37 +51,7 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 5. `bootstrap` is oversized for our use
-
-**Observation:** the entire bootstrap CSS is loaded into the metrics HTML template purely for four grid classes: `container-fluid`, `row`, `col-md-6`, `col-md-4`. That's ~230 KB of CSS for a handful of flex-layout rules we could write in 10 lines.
-
-**Candidate replacement:** inline the minimal grid CSS directly in `metrics_template.hb` or in a small sibling `.css` file, drop bootstrap entirely.
-
-**Effort:** small, improves page load, removes a transitive `jquery`/`popper.js` chain.
-
----
-
-## 6. `lodash` — many call sites redundant with modern JS
-
-**Observation:** usages include `_.isEmpty`, `_.union`, `_.startsWith`, `_.find`, `_.toString`, `_.get`. All are either trivial in modern JS or one-liners (`[...new Set([...a, ...b])]` for union, `str.startsWith(...)`, `arr.find(...)`, optional chaining for get).
-
-**Change:** replace call-by-call; delete lodash when no more references. Could be done incrementally across commits.
-
-**Effort:** medium — ~dozen call sites.
-
----
-
-## 7. `handlebars` is heavy for one template
-
-**Observation:** Handlebars is a full mustache-style template engine pulled in to render one HTML file (`metrics_template.hb`) at CLI time. The template uses basic `{{#each}}`, `{{#if}}`, and variable interpolation — all of which are trivial in tagged template literals.
-
-**Change:** replace with a ~30-line template-literal renderer, drop handlebars.
-
-**Effort:** medium — template has ~10 interpolation points. Worth it only if we also clean up items 4 and 5 above (the three together would leave the metrics HTML generation completely dep-free).
-
----
-
-## 8. `expect` standalone is an orphan split of Jest
+## 5. `expect` standalone is an orphan split of Jest
 
 **Observation:** the `expect` npm package is a standalone release of Jest's assertion library, maintained only as a byproduct of the Jest monorepo. It's functional but not positioned as a long-term standalone choice. Jest's own guidance is to use their bundled expect in-tree.
 
@@ -91,7 +61,7 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 9. Dev-only audit findings remaining after the Node 22 upgrade
+## 6. Dev-only audit findings remaining after the Node 22 upgrade
 
 **Observation:** after Phase 5 `npm audit fix`, two vulnerabilities remain, both in dev-only transitive deps:
 
@@ -106,7 +76,7 @@ Neither ships to end users (both are `devDependencies` or test-only transitives)
 
 ---
 
-## 10. `axios` call has a vestigial `json: true` option
+## 7. `axios` call has a vestigial `json: true` option
 
 **Observation:** in `src/lib/utils.js` the `axios({ ... })` call passes `json: true`. Axios has never read that key — it's a leftover from `request`-era HTTP libs. It's harmless, but it misleads future readers.
 
