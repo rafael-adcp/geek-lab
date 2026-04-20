@@ -18,7 +18,7 @@
     "postinstall": "node ./src/scripts/post-install.js",
     "lint": "eslint .",
     "test": "nyc --reporter=html --reporter=text mocha \"test/**/*.spec.js\" --timeout 10000 --recursive --exit",
-    "clean": "rm -Rf node_modules/ && rm -f ./package-lock.json && npm cache clean -f && rm -Rf .nyc_output/ && rm -Rf coverage/",
+    "clean": "rimraf node_modules ./package-lock.json .nyc_output coverage && npm cache clean -f",
     "rebuild": "npm run clean && npm i"
   },
   "bin": {
@@ -48,6 +48,7 @@
     "eslint": "^8.57.1",
     "expect": "^30.3.0",
     "mocha": "^10.8.2",
-    "nyc": "^17.1.0"
+    "nyc": "^17.1.0",
+    "rimraf": "^6.1.3"
   }
 }
