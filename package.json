@@ -21,10 +21,6 @@
     "clean": "rm -Rf node_modules/ && rm -f ./package-lock.json && npm cache clean -f && rm -Rf .nyc_output/ && rm -Rf coverage/",
     "rebuild": "npm run clean && npm i"
   },
-  "pre-push": [
-    "lint",
-    "test"
-  ],
   "bin": {
     "geek-lab": "./bin/geek-lab.js",
     "glab": "./bin/geek-lab.js",
@@ -50,7 +46,6 @@
     "eslint": "^8.57.1",
     "expect": "^30.3.0",
     "mocha": "^10.8.2",
-    "nyc": "^17.1.0",
-    "pre-push": "^0.1.1"
+    "nyc": "^17.1.0"
   }
 }
