@@ -1,6 +1,6 @@
 const action = require('../../../src/actions/geek-lab/default-actions');
 const utils = require('../../../src/lib/utils');
-const expect = require('expect');
+const { expect } = require('expect');
 
 const yargs = require('yargs');
 const sinon = require('sinon');

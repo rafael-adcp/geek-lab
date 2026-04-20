@@ -1,4 +1,4 @@
-const expect = require('expect');
+const { expect } = require('expect');
 const uuidv1 = require('uuid/v1');
 const yargs = require('yargs');
 const sinon = require('sinon');

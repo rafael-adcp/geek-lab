@@ -1,5 +1,5 @@
 const execSync = require('child_process').execSync;
-const expect = require('expect');
+const { expect } = require('expect');
 
 /**
  * command to execute cli via node so that tests can be executed via GitHub Actions
