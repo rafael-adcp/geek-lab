@@ -6,22 +6,7 @@ Listed roughly in order of effort-vs-payoff.
 
 ---
 
-## 1. `moment` — officially in maintenance mode
-
-**Observation:** https://momentjs.com/docs/#/-project-status/ explicitly recommends migrating to another library. We use it for:
-- formatting today's date as `DD/MM/YYYY` (metrics collection)
-- the `isSameOrAfter` comparison on `tokenExpires` in `src/actions/auth.js`
-- timestamp arithmetic (`.add(..., 'minutes')`) in the same file
-
-All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeFormat` + `Date` arithmetic.
-
-**Candidate replacement:** `dayjs` (2kB, drop-in API for the surface we use) or native `Intl.DateTimeFormat`.
-
-**Effort:** small — ~4 call sites.
-
----
-
-## 2. `eslint` 8 is end-of-life
+## 1. `eslint` 8 is end-of-life
 
 **Observation:** eslint 8 reached EOL in October 2024. We intentionally stayed on 8 during the Node upgrade to avoid the flat-config migration that v9+ forces. Current latest is `eslint@10`.
 
@@ -31,7 +16,7 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 3. `d3` may be unused
+## 2. `d3` may be unused
 
 **Observation:** no `src/` file imports `d3`. It's only referenced via a `<script>` tag in `src/handlebars/metrics_template.hb`, which predates `billboard.js@3`. Modern `billboard.js` (v3+) bundles the `d3-*` submodules it needs, so the external `d3` script tag is likely dead weight.
 
@@ -41,7 +26,7 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 4. Residual `npm audit` findings — upstream-blocked in `mocha`
+## 3. Residual `npm audit` findings — upstream-blocked in `mocha`
 
 **Observation:** even after bumping `mocha` to the current major (`11.7.5`), `npm audit` still reports two transitive findings:
 
