@@ -41,17 +41,7 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 4. `expect` standalone is an orphan split of Jest
-
-**Observation:** the `expect` npm package is a standalone release of Jest's assertion library, maintained only as a byproduct of the Jest monorepo. It's functional but not positioned as a long-term standalone choice. Jest's own guidance is to use their bundled expect in-tree.
-
-**Candidate replacement:** `chai` (stable, widely adopted with mocha) or `node:assert` (zero-dep, strict mode gives the same guarantees with slightly more verbose call sites).
-
-**Effort:** medium — ~30 assertion sites across 14 spec files, mostly `toContain`/`toBe`/`toStrictEqual`. Mechanical.
-
----
-
-## 5. Residual `npm audit` findings — upstream-blocked in `mocha`
+## 4. Residual `npm audit` findings — upstream-blocked in `mocha`
 
 **Observation:** even after bumping `mocha` to the current major (`11.7.5`), `npm audit` still reports two transitive findings:
 
