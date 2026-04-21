@@ -6,17 +6,7 @@ Listed roughly in order of effort-vs-payoff.
 
 ---
 
-## 1. `d3` may be unused
-
-**Observation:** no `src/` file imports `d3`. It's only referenced via a `<script>` tag in `src/handlebars/metrics_template.hb`, which predates `billboard.js@3`. Modern `billboard.js` (v3+) bundles the `d3-*` submodules it needs, so the external `d3` script tag is likely dead weight.
-
-**Change:** remove the `<script src=".../d3/...">` tag from the template; confirm the chart still renders; drop `d3` from `dependencies`.
-
-**Effort:** small, but requires opening the generated HTML in a browser to verify the charts still render.
-
----
-
-## 2. Residual `npm audit` findings — upstream-blocked in `mocha`
+## 1. Residual `npm audit` findings — upstream-blocked in `mocha`
 
 **Observation:** even after bumping `mocha` to the current major (`11.7.5`), `npm audit` still reports two transitive findings:
 
