@@ -1,6 +1,5 @@
 const path = require('path');
 const fs = require('fs');
-const moment = require('moment');
 const axios = require('axios');
 const _ = require('lodash');
 const mysql2 = require('mysql2/promise');
@@ -23,7 +22,7 @@ const UTILS = {
       - check file for invalid characters
       - install the tool again and it will generate everything you need if missing something`);
       console.log(e);
-      throw new Error('Failed to read file');
+      throw new Error('Failed to read file', { cause: e });
     }
   },
 
@@ -35,7 +34,7 @@ const UTILS = {
     } catch (e) {
       console.log(`something went wrong while attempting to write file ${filePath}`);
       console.log(e);
-      throw new Error(`Failed to write file ${filePath}`);
+      throw new Error(`Failed to write file ${filePath}`, { cause: e });
 
     }
   },
@@ -68,7 +67,7 @@ const UTILS = {
       //increasing total usage of command
       metricsFileContent.totalUsage[command]++;
 
-      const currentDate = moment(new Date()).format('DD/MM/YYYY');
+      const currentDate = new Intl.DateTimeFormat('en-GB').format(new Date());
 
       // creating entry for date if not there yet
       if (!metricsFileContent.dailyUsage[currentDate]) {
@@ -132,7 +131,6 @@ const UTILS = {
     const res = await axios({
       method: method.toUpperCase(),
       url: UTILS.getConfigValue('apiUrl') + endpoint,
-      json: true,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': UTILS.readConfig().token,
@@ -175,8 +173,7 @@ const UTILS = {
       UTILS.getCustomActionsPath()
     );
 
-    let files = [];
-    files = _.union(
+    const files = _.union(
       defaultActions,
       customActions
     );

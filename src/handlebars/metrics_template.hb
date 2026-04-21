@@ -1,11 +1,7 @@
 <html>
 <header>
-    <!-- Load D3.js -->
-
-    <script src="../../node_modules/d3/dist/d3.min.js"></script>
-
-    <!-- Load billboard.js with style -->
-    <script src="../../node_modules/billboard.js/dist/billboard.js"></script>
+    <!-- Load billboard.js (packaged build bundles the d3-* submodules it needs) -->
+    <script src="../../node_modules/billboard.js/dist/billboard.pkgd.js"></script>
     <link rel="stylesheet" href="../../node_modules/billboard.js/dist/billboard.css">
 
     <!-- Load bootstrap style -->

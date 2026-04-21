@@ -1,4 +1,4 @@
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const yargs = require('yargs');
 const sinon = require('sinon');
 
@@ -38,8 +38,8 @@ describe('#actions/geek-lab/metrics', () => {
 
     sinon.replace(utils, 'readMetricsFile', readMetricsFileStub);
     const res = action.handler({});
-    expect(readMetricsFileStub.calledOnce).toEqual(true);
-    expect(JSON.parse(res)).toEqual(mockedConfigFileContent);
+    assert.deepStrictEqual(readMetricsFileStub.calledOnce, true);
+    assert.deepStrictEqual(JSON.parse(res), mockedConfigFileContent);
   });
 
   it('should generate an html repot if param is provided', () => {
@@ -54,16 +54,16 @@ describe('#actions/geek-lab/metrics', () => {
       'pretty': true,
     });
 
-    expect(writeFileSyncStub.calledOnce).toEqual(true);
-    expect(readMetricsFileStub.calledOnce).toEqual(true);
-    expect(res).toContain('Html report generated and located at');
+    assert.deepStrictEqual(writeFileSyncStub.calledOnce, true);
+    assert.deepStrictEqual(readMetricsFileStub.calledOnce, true);
+    assert.ok((res).includes('Html report generated and located at'));
 
     //asserting the fileName provided to fs.writeFileSync
-    expect(writeFileSyncStub.getCall(0).args[0]).not.toBe(null);
-    expect(writeFileSyncStub.getCall(0).args[0]).toContain('awesome_metrics');
+    assert.notStrictEqual(writeFileSyncStub.getCall(0).args[0], null);
+    assert.ok((writeFileSyncStub.getCall(0).args[0]).includes('awesome_metrics'));
 
     //asserting the content provided to fs.writeFileSync
-    expect(writeFileSyncStub.getCall(0).args[1]).toContain('Geek lab metrics');
-    expect(writeFileSyncStub.getCall(0).args[1]).toContain('batman');
+    assert.ok((writeFileSyncStub.getCall(0).args[1]).includes('Geek lab metrics'));
+    assert.ok((writeFileSyncStub.getCall(0).args[1]).includes('batman'));
   });
 });

@@ -1,4 +1,4 @@
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const { v1: uuidv1 } = require('uuid');
 const sinon = require('sinon');
 const yargs = require('yargs');
@@ -20,7 +20,7 @@ describe('#actions/geek-lab/config', () => {
 
     configAction.builder(yargs);
     const res = configAction.handler({});
-    expect(res).toContain('mocked by rprado on unit test');
+    assert.ok((res).includes('mocked by rprado on unit test'));
   });
 
   it('should create a new env config given a an env a key and a value', (done) => {
@@ -51,10 +51,10 @@ describe('#actions/geek-lab/config', () => {
     expectedParams[env] = {};
     expectedParams[env][key] = value;
 
-    expect(readConfigStub.calledOnce).toBe(true);
-    expect(writeInternalCliFileStub.calledOnce).toBe(true);
+    assert.strictEqual(readConfigStub.calledOnce, true);
+    assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
 
-    expect(stubCalledParams).toStrictEqual(expectedParams);
+    assert.deepStrictEqual(stubCalledParams, expectedParams);
     done();
   });
 
@@ -87,10 +87,10 @@ describe('#actions/geek-lab/config', () => {
       },
     };
 
-    expect(readConfigStub.calledOnce).toBe(true);
-    expect(writeInternalCliFileStub.calledOnce).toBe(true);
+    assert.strictEqual(readConfigStub.calledOnce, true);
+    assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
 
-    expect(stubCalledParams).toStrictEqual(expectedParams);
+    assert.deepStrictEqual(stubCalledParams, expectedParams);
     done();
   });
 });

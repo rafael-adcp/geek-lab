@@ -1,7 +1,6 @@
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const sinon = require('sinon');
 const fs = require('fs');
-const moment = require('moment');
 const mysql2 = require('mysql2/promise');
 
 const {
@@ -59,7 +58,7 @@ describe('#src/lib/utils/lib/getConfigValue', () => {
         getConfigValue(element.configKey);
         done('this shouldnt happen');
       } catch (e) {
-        expect(e.toString()).toContain(element.errorMessage);
+        assert.ok((e.toString()).includes(element.errorMessage));
         done();
       }
     });
@@ -77,7 +76,7 @@ describe('#src/lib/utils/lib/getConfigValue', () => {
     sinon.replace(utils, 'readConfig', fnStub);
 
     const value = getConfigValue('oneValidKey');
-    expect(value).toBe('blah');
+    assert.strictEqual(value, 'blah');
   });
 });
 
@@ -96,7 +95,7 @@ describe('#src/lib/utils/lib/performRequest', () => {
     performRequest({
       data: '@mocked.json',
     }).catch(() => {
-      expect(readFileSyncStub.calledOnce).toBe(true);
+      assert.strictEqual(readFileSyncStub.calledOnce, true);
       done();
     });
   });
@@ -138,7 +137,7 @@ describe('#src/lib/utils/lib/performRequest', () => {
   ].forEach((element) => {
     it(element.testName, (done) => {
       performRequest(element.params).catch((e) => {
-        expect(e.toString()).toContain(element.errorMessage);
+        assert.ok((e.toString()).includes(element.errorMessage));
         done();
       });
     });
@@ -157,7 +156,7 @@ describe('#src/lib/utils/lib/readInternalCliFile', () => {
     try {
       readInternalCliFile('batman');
     } catch (e) {
-      expect(e.toString()).toContain('Error: Failed to read file');
+      assert.ok((e.toString()).includes('Error: Failed to read file'));
     }
   });
 });
@@ -176,7 +175,7 @@ describe('#src/lib/utils/lib/writeInternalCliFile', () => {
       writeInternalCliFile('batman');
       done('nooo');
     } catch (e) {
-      expect(e.toString()).toContain('Failed to write file');
+      assert.ok((e.toString()).includes('Failed to write file'));
       done();
     }
   });
@@ -206,11 +205,11 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
 
     collectMetrics('magicInMe');
     const [, writtenData] = writeInternalCliFileStub.getCall(0).args;
-    const today = moment(new Date()).format('DD/MM/YYYY');
+    const today = new Intl.DateTimeFormat('en-GB').format(new Date());
 
-    expect(writeInternalCliFileStub.calledOnce).toBe(true);
-    expect(writtenData.dailyUsage[today].magicInMe).toBe(1);
-    expect(writtenData.totalUsage.magicInMe).toBe(1);
+    assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
+    assert.strictEqual(writtenData.dailyUsage[today].magicInMe, 1);
+    assert.strictEqual(writtenData.totalUsage.magicInMe, 1);
   });
 
   it('should not track metrics if config variable is false', () => {
@@ -224,7 +223,7 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
     sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
 
     collectMetrics('magicInMe');
-    expect(writeInternalCliFileStub.calledOnce).toBe(false);
+    assert.strictEqual(writeInternalCliFileStub.calledOnce, false);
   });
 
   it('should reuse entry while tracking metrics if available', () => {
@@ -239,7 +238,7 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
         'magicInMe': 1,
       },
       'dailyUsage': {
-        [moment(new Date()).format('DD/MM/YYYY')]: {
+        [new Intl.DateTimeFormat('en-GB').format(new Date())]: {
           magicInMe: 1,
         },
       },
@@ -252,11 +251,11 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
 
     collectMetrics('magicInMe');
     const [, writtenData] = writeInternalCliFileStub.getCall(0).args;
-    const today = moment(new Date()).format('DD/MM/YYYY');
+    const today = new Intl.DateTimeFormat('en-GB').format(new Date());
 
-    expect(writeInternalCliFileStub.calledOnce).toBe(true);
-    expect(writtenData.dailyUsage[today].magicInMe).toBe(2);
-    expect(writtenData.totalUsage.magicInMe).toBe(2);
+    assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
+    assert.strictEqual(writtenData.dailyUsage[today].magicInMe, 2);
+    assert.strictEqual(writtenData.totalUsage.magicInMe, 2);
 
   });
 
@@ -325,9 +324,9 @@ describe('#src/lib/utils/lib/performMySQLQuery', () => {
     const query = 'some query in here';
     performMySQLQuery(query).then((res) => {
       const stubCalledParams = executeStub.getCall(0);
-      expect(res).not.toBe(null);
-      expect(executeStub.calledOnce).toBe(true);
-      expect(stubCalledParams.toString()).toContain(query);
+      assert.notStrictEqual(res, null);
+      assert.strictEqual(executeStub.calledOnce, true);
+      assert.ok((stubCalledParams.toString()).includes(query));
       done();
     });
   });

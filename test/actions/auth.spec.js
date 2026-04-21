@@ -1,6 +1,5 @@
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const { v1: uuidv1 } = require('uuid');
-const moment = require('moment');
 const yargs = require('yargs');
 const sinon = require('sinon');
 
@@ -15,7 +14,7 @@ describe('#actions/auth', () => {
 
   it('should just print the token if a token is set and it is not expired', (done) => {
     const token = `faking me for test - ${uuidv1()}`;
-    const tokenExpires = moment().add(120, 'minutes');
+    const tokenExpires = new Date(Date.now() + 120 * 60000);
 
     const readConfigStub = sinon.stub().returns({
       'env': null,
@@ -26,7 +25,7 @@ describe('#actions/auth', () => {
     sinon.replace(utils, 'readConfig', readConfigStub);
     authAction.builder(yargs);
     authAction.handler().then((res) => {
-      expect(res).toContain(token);
+      assert.ok((res).includes(token));
       done();
     });
   });
@@ -47,7 +46,7 @@ describe('#actions/auth', () => {
     sinon.replace(utils, 'readConfig', readConfigStub);
 
     authAction.handler().catch((e) => {
-      expect(e.toString()).toContain('Failed to execute api call');
+      assert.ok((e.toString()).includes('Failed to execute api call'));
       done();
     });
   });
@@ -77,7 +76,7 @@ describe('#actions/auth', () => {
     sinon.replace(utils, 'performRequest', performRequestStub);
 
     authAction.handler().catch((e) => {
-      expect(e.toString()).toContain('Something wrong happend on authentication');
+      assert.ok((e.toString()).includes('Something wrong happend on authentication'));
       done();
     });
   });
@@ -112,7 +111,7 @@ describe('#actions/auth', () => {
 
     authAction.handler().then(() => {
       const stubCalledParams = writeInternalCliFileStub.getCall(0);
-      expect(stubCalledParams.toString()).toContain('batman-1234');
+      assert.ok((stubCalledParams.toString()).includes('batman-1234'));
       done();
     });
   });

@@ -6,110 +6,17 @@ Listed roughly in order of effort-vs-payoff.
 
 ---
 
-## 1. `sinon` is in `dependencies`, should be in `devDependencies`
+## 1. Residual `npm audit` findings — upstream-blocked in `mocha`
 
-**Observation:** `sinon` is only `require`d from files under `test/`; no `src/` file imports it. Shipping it as a runtime dep pulls its entire transitive tree (dozens of packages) into end-user installs of the `geek-lab` CLI for no runtime benefit.
+**Observation:** even after bumping `mocha` to the current major (`11.7.5`), `npm audit` still reports two transitive findings:
 
-**Change:** `npm install --save-dev sinon && npm uninstall sinon` (or edit package.json directly and regenerate the lockfile).
+- `serialize-javascript <= 7.0.4` (high severity, GHSA-5c6j-r48x-rmvq + GHSA-qj8w-gfj5-8c6v) — pulled in by `mocha`, which still pins `^6.0.2`. A patched `serialize-javascript@7.0.5` exists but mocha has not bumped to it.
+- `diff 6.0.0 - 8.0.2` (low severity, GHSA-73rr-hh4g-fpgx) — pulled in by `mocha`, which pins `^7.0.0`. A patched `diff@8.0.3+` exists but mocha has not bumped to it.
 
-**Effort:** trivial. **Payoff:** ~20 fewer packages in installs, smaller audit surface.
+Both are dev-only (mocha is a `devDependency`); nothing in this advisory chain ships to end users of the CLI.
 
----
+**Options:**
+- **Wait for upstream:** track the next mocha minor/major and re-run `npm audit` when it lands.
+- **Force via `overrides`:** add an `overrides` block to `package.json` pinning `serialize-javascript@^7.0.5` and `diff@^8.0.3`. Risk: mocha relies on the older API surface; needs a full test run to confirm.
 
-## 2. `moment` — officially in maintenance mode
-
-**Observation:** https://momentjs.com/docs/#/-project-status/ explicitly recommends migrating to another library. We use it for:
-- formatting today's date as `DD/MM/YYYY` (metrics collection)
-- the `isSameOrAfter` comparison on `tokenExpires` in `src/actions/auth.js`
-- timestamp arithmetic (`.add(..., 'minutes')`) in the same file
-
-All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeFormat` + `Date` arithmetic.
-
-**Candidate replacement:** `dayjs` (2kB, drop-in API for the surface we use) or native `Intl.DateTimeFormat`.
-
-**Effort:** small — ~4 call sites.
-
----
-
-## 3. `eslint` 8 is end-of-life
-
-**Observation:** eslint 8 reached EOL in October 2024. We intentionally stayed on 8 during the Node upgrade to avoid the flat-config migration that v9 forces.
-
-**Change:** migrate `.eslintrc` → `eslint.config.js` (flat config), upgrade to `eslint@9`.
-
-**Effort:** medium — mechanical but touches the entire rules block. There are automated migrators (`@eslint/migrate-config`).
-
----
-
-## 4. `d3` may be unused
-
-**Observation:** no `src/` file imports `d3`. It's only referenced via a `<script>` tag in `src/handlebars/metrics_template.hb`, which predates `billboard.js@3`. Modern `billboard.js` (v3+) bundles the `d3-*` submodules it needs, so the external `d3` script tag is likely dead weight.
-
-**Change:** remove the `<script src=".../d3/...">` tag from the template; confirm the chart still renders; drop `d3` from `dependencies`.
-
-**Effort:** small, but requires opening the generated HTML in a browser to verify the charts still render.
-
----
-
-## 5. `bootstrap` is oversized for our use
-
-**Observation:** the entire bootstrap CSS is loaded into the metrics HTML template purely for four grid classes: `container-fluid`, `row`, `col-md-6`, `col-md-4`. That's ~230 KB of CSS for a handful of flex-layout rules we could write in 10 lines.
-
-**Candidate replacement:** inline the minimal grid CSS directly in `metrics_template.hb` or in a small sibling `.css` file, drop bootstrap entirely.
-
-**Effort:** small, improves page load, removes a transitive `jquery`/`popper.js` chain.
-
----
-
-## 6. `lodash` — many call sites redundant with modern JS
-
-**Observation:** usages include `_.isEmpty`, `_.union`, `_.startsWith`, `_.find`, `_.toString`, `_.get`. All are either trivial in modern JS or one-liners (`[...new Set([...a, ...b])]` for union, `str.startsWith(...)`, `arr.find(...)`, optional chaining for get).
-
-**Change:** replace call-by-call; delete lodash when no more references. Could be done incrementally across commits.
-
-**Effort:** medium — ~dozen call sites.
-
----
-
-## 7. `handlebars` is heavy for one template
-
-**Observation:** Handlebars is a full mustache-style template engine pulled in to render one HTML file (`metrics_template.hb`) at CLI time. The template uses basic `{{#each}}`, `{{#if}}`, and variable interpolation — all of which are trivial in tagged template literals.
-
-**Change:** replace with a ~30-line template-literal renderer, drop handlebars.
-
-**Effort:** medium — template has ~10 interpolation points. Worth it only if we also clean up items 4 and 5 above (the three together would leave the metrics HTML generation completely dep-free).
-
----
-
-## 8. `expect` standalone is an orphan split of Jest
-
-**Observation:** the `expect` npm package is a standalone release of Jest's assertion library, maintained only as a byproduct of the Jest monorepo. It's functional but not positioned as a long-term standalone choice. Jest's own guidance is to use their bundled expect in-tree.
-
-**Candidate replacement:** `chai` (stable, widely adopted with mocha) or `node:assert` (zero-dep, strict mode gives the same guarantees with slightly more verbose call sites).
-
-**Effort:** medium — ~30 assertion sites across 14 spec files, mostly `toContain`/`toBe`/`toStrictEqual`. Mechanical.
-
----
-
-## 9. Dev-only audit findings remaining after the Node 22 upgrade
-
-**Observation:** after Phase 5 `npm audit fix`, two vulnerabilities remain, both in dev-only transitive deps:
-
-- `diff` (via `sinon@19`) — low severity, fixed in `sinon@21`.
-- `serialize-javascript` (via `mocha@10`) — high severity, fixed in `mocha@11`.
-
-Neither ships to end users (both are `devDependencies` or test-only transitives), but they surface in `npm audit`. Each fix is a one-major bump and was deliberately deferred out of the upgrade plan's Phase 5 (which excluded breaking changes).
-
-**Change:** `npm install --save-dev sinon@21 mocha@11`, then re-run the test suite to confirm no API breakage.
-
-**Effort:** trivial — one commit per bump.
-
----
-
-## 10. `axios` call has a vestigial `json: true` option
-
-**Observation:** in `src/lib/utils.js` the `axios({ ... })` call passes `json: true`. Axios has never read that key — it's a leftover from `request`-era HTTP libs. It's harmless, but it misleads future readers.
-
-**Change:** delete the `json: true` line.
-
-**Effort:** one line. Include in any other touch to `utils.js`.
+**Effort:** trivial if waiting; small if going the overrides route (requires verifying mocha still works against the forced versions).

@@ -1,4 +1,4 @@
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const yargs = require('yargs');
 const sinon = require('sinon');
 
@@ -21,7 +21,7 @@ describe('#actions/mysql-find-column', () => {
       column: column,
     }).then(() => {
       const stubCalledParams = stub.getCall(0);
-      expect(stubCalledParams.toString()).toContain(column);
+      assert.ok((stubCalledParams.toString()).includes(column));
       done();
     });
   });
@@ -36,8 +36,8 @@ describe('#actions/mysql-find-column', () => {
     actions.handler({
       column: column,
     }).catch((e) => {
-      expect(e.toString()).toContain(column);
-      expect(e.toString()).toContain(exceptionMessage);
+      assert.ok((e.toString()).includes(column));
+      assert.ok((e.toString()).includes(exceptionMessage));
       done();
     });
   });
