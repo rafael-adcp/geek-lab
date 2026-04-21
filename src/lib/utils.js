@@ -1,6 +1,5 @@
 const path = require('path');
 const fs = require('fs');
-const moment = require('moment');
 const axios = require('axios');
 const _ = require('lodash');
 const mysql2 = require('mysql2/promise');
@@ -68,7 +67,7 @@ const UTILS = {
       //increasing total usage of command
       metricsFileContent.totalUsage[command]++;
 
-      const currentDate = moment(new Date()).format('DD/MM/YYYY');
+      const currentDate = new Intl.DateTimeFormat('en-GB').format(new Date());
 
       // creating entry for date if not there yet
       if (!metricsFileContent.dailyUsage[currentDate]) {

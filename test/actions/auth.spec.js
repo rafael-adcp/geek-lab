@@ -1,6 +1,5 @@
 const assert = require('node:assert/strict');
 const { v1: uuidv1 } = require('uuid');
-const moment = require('moment');
 const yargs = require('yargs');
 const sinon = require('sinon');
 
@@ -15,7 +14,7 @@ describe('#actions/auth', () => {
 
   it('should just print the token if a token is set and it is not expired', (done) => {
     const token = `faking me for test - ${uuidv1()}`;
-    const tokenExpires = moment().add(120, 'minutes');
+    const tokenExpires = new Date(Date.now() + 120 * 60000);
 
     const readConfigStub = sinon.stub().returns({
       'env': null,

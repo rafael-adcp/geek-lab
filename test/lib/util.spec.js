@@ -1,7 +1,6 @@
 const assert = require('node:assert/strict');
 const sinon = require('sinon');
 const fs = require('fs');
-const moment = require('moment');
 const mysql2 = require('mysql2/promise');
 
 const {
@@ -206,7 +205,7 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
 
     collectMetrics('magicInMe');
     const [, writtenData] = writeInternalCliFileStub.getCall(0).args;
-    const today = moment(new Date()).format('DD/MM/YYYY');
+    const today = new Intl.DateTimeFormat('en-GB').format(new Date());
 
     assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
     assert.strictEqual(writtenData.dailyUsage[today].magicInMe, 1);
@@ -239,7 +238,7 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
         'magicInMe': 1,
       },
       'dailyUsage': {
-        [moment(new Date()).format('DD/MM/YYYY')]: {
+        [new Intl.DateTimeFormat('en-GB').format(new Date())]: {
           magicInMe: 1,
         },
       },
@@ -252,7 +251,7 @@ describe('#src/lib/utils/lib/collectMetrics', () => {
 
     collectMetrics('magicInMe');
     const [, writtenData] = writeInternalCliFileStub.getCall(0).args;
-    const today = moment(new Date()).format('DD/MM/YYYY');
+    const today = new Intl.DateTimeFormat('en-GB').format(new Date());
 
     assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
     assert.strictEqual(writtenData.dailyUsage[today].magicInMe, 2);
