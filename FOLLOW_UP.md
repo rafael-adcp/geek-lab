@@ -6,17 +6,7 @@ Listed roughly in order of effort-vs-payoff.
 
 ---
 
-## 1. `eslint` 8 is end-of-life
-
-**Observation:** eslint 8 reached EOL in October 2024. We intentionally stayed on 8 during the Node upgrade to avoid the flat-config migration that v9+ forces. Current latest is `eslint@10`.
-
-**Change:** migrate `.eslintrc` → `eslint.config.js` (flat config), upgrade to `eslint@10`.
-
-**Effort:** medium — mechanical but touches the entire rules block. There are automated migrators (`@eslint/migrate-config`).
-
----
-
-## 2. `d3` may be unused
+## 1. `d3` may be unused
 
 **Observation:** no `src/` file imports `d3`. It's only referenced via a `<script>` tag in `src/handlebars/metrics_template.hb`, which predates `billboard.js@3`. Modern `billboard.js` (v3+) bundles the `d3-*` submodules it needs, so the external `d3` script tag is likely dead weight.
 
@@ -26,7 +16,7 @@ Listed roughly in order of effort-vs-payoff.
 
 ---
 
-## 3. Residual `npm audit` findings — upstream-blocked in `mocha`
+## 2. Residual `npm audit` findings — upstream-blocked in `mocha`
 
 **Observation:** even after bumping `mocha` to the current major (`11.7.5`), `npm audit` still reports two transitive findings:
 
