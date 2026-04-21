@@ -21,7 +21,7 @@ exports.handler = async () => {
       });
     } catch (e) {
       console.log(e.toString());
-      throw new Error('Failed to execute api call');
+      throw new Error('Failed to execute api call', { cause: e });
     }
     if (!apiResponse.response || apiResponse.response.status !== 'OK' || isEmpty(apiResponse.response[UTILS.getConfigValue('apiTokenResponseField')])) {
       console.log(apiResponse);

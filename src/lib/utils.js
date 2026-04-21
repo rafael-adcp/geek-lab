@@ -22,7 +22,7 @@ const UTILS = {
       - check file for invalid characters
       - install the tool again and it will generate everything you need if missing something`);
       console.log(e);
-      throw new Error('Failed to read file');
+      throw new Error('Failed to read file', { cause: e });
     }
   },
 
@@ -34,7 +34,7 @@ const UTILS = {
     } catch (e) {
       console.log(`something went wrong while attempting to write file ${filePath}`);
       console.log(e);
-      throw new Error(`Failed to write file ${filePath}`);
+      throw new Error(`Failed to write file ${filePath}`, { cause: e });
 
     }
   },
@@ -173,8 +173,7 @@ const UTILS = {
       UTILS.getCustomActionsPath()
     );
 
-    let files = [];
-    files = _.union(
+    const files = _.union(
       defaultActions,
       customActions
     );

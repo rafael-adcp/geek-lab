@@ -17,6 +17,6 @@ exports.handler = async (argv) => {
     return mysqlResult;
   } catch (e) {
     console.log(e.toString());
-    throw new Error(`Failed to execute query: "${argv.query}" due to `+  e.toString());
+    throw new Error(`Failed to execute query: "${argv.query}" due to ` + e.toString(), { cause: e });
   }
 };
