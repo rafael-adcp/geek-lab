@@ -1,4 +1,4 @@
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const yargs = require('yargs');
 const sinon = require('sinon');
 
@@ -21,7 +21,7 @@ describe('#actions/mysql-find-table', () => {
       table: table,
     }).then(() => {
       const stubCalledParams = stub.getCall(0);
-      expect(stubCalledParams.toString()).toContain(table);
+      assert.ok((stubCalledParams.toString()).includes(table));
       done();
     });
   });
@@ -36,8 +36,8 @@ describe('#actions/mysql-find-table', () => {
     actions.handler({
       table: table,
     }).catch((e) => {
-      expect(e.toString()).toContain(table);
-      expect(e.toString()).toContain(exceptionMessage);
+      assert.ok((e.toString()).includes(table));
+      assert.ok((e.toString()).includes(exceptionMessage));
       done();
     });
   });

@@ -1,4 +1,4 @@
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const sinon = require('sinon');
 const yargs = require('yargs');
 const cget = require('../../../src/actions/rest/cget');
@@ -27,8 +27,8 @@ const utils = require('../../../src/lib/utils');
       restAction.builder(yargs);
       restAction.handler({ endpoint: '/batman' }).then(() => {
         const stubCalledParams = performRequestStub.getCall(0).args[0];
-        expect(performRequestStub.calledOnce).toBe(true);
-        expect(stubCalledParams).toStrictEqual({
+        assert.strictEqual(performRequestStub.calledOnce, true);
+        assert.deepStrictEqual(stubCalledParams, {
           'endpoint': '/batman',
           'method': restAction.restAction,
         });
@@ -62,8 +62,8 @@ const utils = require('../../../src/lib/utils');
       })
         .then(() => {
           const stubCalledParams = performRequestStub.getCall(0).args[0];
-          expect(performRequestStub.calledOnce).toBe(true);
-          expect(stubCalledParams).toStrictEqual({
+          assert.strictEqual(performRequestStub.calledOnce, true);
+          assert.deepStrictEqual(stubCalledParams, {
             'endpoint': '/batman',
             'method': restAction.restAction,
             'data': {

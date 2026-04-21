@@ -1,5 +1,5 @@
 
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const sinon = require('sinon');
 const path = require('path');
 
@@ -20,7 +20,7 @@ describe('#src/lib/utils/lib/getAllActions', () => {
     });
     sinon.replace(utils, 'readConfig', readConfigtub);
     const actions = getAllActions();
-    expect(actions).not.toBe(null);
+    assert.notStrictEqual(actions, null);
   });
 
   it('should handle custom actions path when provided', () => {
@@ -31,7 +31,7 @@ describe('#src/lib/utils/lib/getAllActions', () => {
     });
     sinon.replace(utils, 'readConfig', readConfigtub);
     const actions = getAllActions();
-    expect(actions).not.toBe(null);
+    assert.notStrictEqual(actions, null);
   });
 
   it('shoul throw an error if a duplication action command if found', (done) => {
@@ -53,7 +53,7 @@ describe('#src/lib/utils/lib/getAllActions', () => {
       getAllActions();
       done('nop');
     } catch (e) {
-      expect(e.toString()).toBe('Error: Duplicate command provided');
+      assert.strictEqual(e.toString(), 'Error: Duplicate command provided');
       done();
     }
   });

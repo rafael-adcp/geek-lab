@@ -1,5 +1,5 @@
 const execSync = require('child_process').execSync;
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 
 /**
  * command to execute cli via node so that tests can be executed via GitHub Actions
@@ -12,11 +12,11 @@ describe('#bin', () => {
       execSync(`${execBin}`);
       done('this shouldnt happen');
     } catch (e) {
-      expect(e.toString()).toContain('<command>');
-      expect(e.toString()).toContain('--help');
-      expect(e.toString()).toContain('--version');
-      expect(e.toString()).not.toContain('invalid command');
-      expect(e.toString()).not.toContain('see available');
+      assert.ok((e.toString()).includes('<command>'));
+      assert.ok((e.toString()).includes('--help'));
+      assert.ok((e.toString()).includes('--version'));
+      assert.ok(!(e.toString()).includes('invalid command'));
+      assert.ok(!(e.toString()).includes('see available'));
       done();
     }
   });
@@ -24,21 +24,21 @@ describe('#bin', () => {
   it('should show help if --help is provided', () => {
     const res = execSync(`${execBin} --help`).toString();
 
-    expect(res).toContain('<command>');
-    expect(res).toContain('--help');
-    expect(res).toContain('--version');
-    expect(res).not.toContain('invalid command');
-    expect(res).not.toContain('see available');
+    assert.ok((res).includes('<command>'));
+    assert.ok((res).includes('--help'));
+    assert.ok((res).includes('--version'));
+    assert.ok(!(res).includes('invalid command'));
+    assert.ok(!(res).includes('see available'));
   });
 
   it('should show version if --version is provided', () => {
     const res = execSync(`${execBin} --version`).toString();
 
-    expect(res).not.toContain('<command>');
-    expect(res).not.toContain('--help');
-    expect(res).not.toContain('invalid command');
-    expect(res).not.toContain('see available');
-    expect(res).toContain(require('../../package.json').version);
+    assert.ok(!(res).includes('<command>'));
+    assert.ok(!(res).includes('--help'));
+    assert.ok(!(res).includes('invalid command'));
+    assert.ok(!(res).includes('see available'));
+    assert.ok((res).includes(require('../../package.json').version));
   });
 
   it('should show invalid command phrase + help when invalid command is provided', () => {
@@ -46,11 +46,11 @@ describe('#bin', () => {
       execSync(`${execBin} batmanrobin`);
     }
     catch (res) {
-      expect(res.toString()).toContain('Invalid command provided');
-      expect(res.toString()).toContain('see available options below');
-      expect(res.toString()).toContain('[command]');
-      expect(res.toString()).toContain('--help');
-      expect(res.toString()).toContain('--version');
+      assert.ok((res.toString()).includes('Invalid command provided'));
+      assert.ok((res.toString()).includes('see available options below'));
+      assert.ok((res.toString()).includes('[command]'));
+      assert.ok((res.toString()).includes('--help'));
+      assert.ok((res.toString()).includes('--version'));
 
     }
   });

@@ -1,4 +1,4 @@
-const { expect } = require('expect');
+const assert = require('node:assert/strict');
 const { v1: uuidv1 } = require('uuid');
 const yargs = require('yargs');
 const sinon = require('sinon');
@@ -25,7 +25,7 @@ describe('#actions/geek-lab/change-env', () => {
           element.params ? element.params : {}
         );
       } catch (e) {
-        expect(e.toString()).toContain(element.errorMessage);
+        assert.ok((e.toString()).includes(element.errorMessage));
         done();
       }
 
@@ -47,7 +47,7 @@ describe('#actions/geek-lab/change-env', () => {
       env: 'batman',
     });
 
-    expect(readConfigStub.calledOnce).toBe(true);
-    expect(writeInternalCliFileStub.calledOnce).toBe(true);
+    assert.strictEqual(readConfigStub.calledOnce, true);
+    assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
   });
 });
