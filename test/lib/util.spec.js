@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const sinon = require('sinon');
 const fs = require('fs');
+const axios = require('axios');
 const mysql2 = require('mysql2/promise');
 
 const {
@@ -140,6 +141,35 @@ describe('#src/lib/utils/lib/performRequest', () => {
         assert.ok((e.toString()).includes(element.errorMessage));
         done();
       });
+    });
+  });
+
+  [
+    {
+      testName: 'should return response data when endpoint already starts with /',
+      endpoint: '/things',
+    },
+    {
+      testName: 'should normalize endpoint when leading / is missing',
+      endpoint: 'things',
+    },
+  ].forEach((element) => {
+    it(element.testName, async () => {
+      sinon.replace(utils, 'readConfig', sinon.stub().returns({ token: 'fake-token' }));
+      sinon.replace(utils, 'getConfigValue', sinon.stub().returns('https://example.test'));
+
+      const requestStub = sinon.stub().resolves({ data: { ok: true } });
+      sinon.replace(axios, 'request', requestStub);
+
+      const response = await performRequest({
+        method: 'get',
+        endpoint: element.endpoint,
+      });
+
+      assert.deepStrictEqual(response, { ok: true });
+      assert.strictEqual(requestStub.calledOnce, true);
+      assert.strictEqual(requestStub.getCall(0).args[0].url, 'https://example.test/things');
+      assert.strictEqual(requestStub.getCall(0).args[0].method, 'GET');
     });
   });
 });

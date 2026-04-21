@@ -128,7 +128,7 @@ const UTILS = {
     //preventing double "/""
     endpoint = _.startsWith(params.endpoint, '/') ? params.endpoint : `/${params.endpoint}`;
 
-    const res = await axios({
+    const res = await axios.request({
       method: method.toUpperCase(),
       url: UTILS.getConfigValue('apiUrl') + endpoint,
       headers: {
@@ -148,7 +148,7 @@ const UTILS = {
       const entries = fs.readdirSync(actionPath, { recursive: true, withFileTypes: true });
       const filePaths = entries
         .filter((entry) => entry.isFile())
-        .map((entry) => path.join(entry.parentPath || entry.path, entry.name));
+        .map((entry) => path.join(entry.parentPath, entry.name));
       files = _.union(files, filePaths);
     }
     return files;
