@@ -6,17 +6,7 @@ Listed roughly in order of effort-vs-payoff.
 
 ---
 
-## 1. `sinon` is in `dependencies`, should be in `devDependencies`
-
-**Observation:** `sinon` is only `require`d from files under `test/`; no `src/` file imports it. Shipping it as a runtime dep pulls its entire transitive tree (dozens of packages) into end-user installs of the `geek-lab` CLI for no runtime benefit.
-
-**Change:** `npm install --save-dev sinon && npm uninstall sinon` (or edit package.json directly and regenerate the lockfile).
-
-**Effort:** trivial. **Payoff:** ~20 fewer packages in installs, smaller audit surface.
-
----
-
-## 2. `moment` — officially in maintenance mode
+## 1. `moment` — officially in maintenance mode
 
 **Observation:** https://momentjs.com/docs/#/-project-status/ explicitly recommends migrating to another library. We use it for:
 - formatting today's date as `DD/MM/YYYY` (metrics collection)
@@ -31,7 +21,7 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 3. `eslint` 8 is end-of-life
+## 2. `eslint` 8 is end-of-life
 
 **Observation:** eslint 8 reached EOL in October 2024. We intentionally stayed on 8 during the Node upgrade to avoid the flat-config migration that v9+ forces. Current latest is `eslint@10`.
 
@@ -41,7 +31,7 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 4. `d3` may be unused
+## 3. `d3` may be unused
 
 **Observation:** no `src/` file imports `d3`. It's only referenced via a `<script>` tag in `src/handlebars/metrics_template.hb`, which predates `billboard.js@3`. Modern `billboard.js` (v3+) bundles the `d3-*` submodules it needs, so the external `d3` script tag is likely dead weight.
 
@@ -51,7 +41,7 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 5. `expect` standalone is an orphan split of Jest
+## 4. `expect` standalone is an orphan split of Jest
 
 **Observation:** the `expect` npm package is a standalone release of Jest's assertion library, maintained only as a byproduct of the Jest monorepo. It's functional but not positioned as a long-term standalone choice. Jest's own guidance is to use their bundled expect in-tree.
 
@@ -61,25 +51,17 @@ All of these are one-liners in `dayjs`, `date-fns`, or plain `Intl.DateTimeForma
 
 ---
 
-## 6. Dev-only audit findings remaining after the Node 22 upgrade
+## 5. Residual `npm audit` findings — upstream-blocked in `mocha`
 
-**Observation:** after Phase 5 `npm audit fix`, two vulnerabilities remain, both in dev-only transitive deps:
+**Observation:** even after bumping `mocha` to the current major (`11.7.5`), `npm audit` still reports two transitive findings:
 
-- `diff` (via `sinon@19`) — low severity, fixed in `sinon@21`.
-- `serialize-javascript` (via `mocha@10`) — high severity, fixed in `mocha@11`.
+- `serialize-javascript <= 7.0.4` (high severity, GHSA-5c6j-r48x-rmvq + GHSA-qj8w-gfj5-8c6v) — pulled in by `mocha`, which still pins `^6.0.2`. A patched `serialize-javascript@7.0.5` exists but mocha has not bumped to it.
+- `diff 6.0.0 - 8.0.2` (low severity, GHSA-73rr-hh4g-fpgx) — pulled in by `mocha`, which pins `^7.0.0`. A patched `diff@8.0.3+` exists but mocha has not bumped to it.
 
-Neither ships to end users (both are `devDependencies` or test-only transitives), but they surface in `npm audit`. Each fix is a one-major bump and was deliberately deferred out of the upgrade plan's Phase 5 (which excluded breaking changes).
+Both are dev-only (mocha is a `devDependency`); nothing in this advisory chain ships to end users of the CLI.
 
-**Change:** `npm install --save-dev sinon@21 mocha@11`, then re-run the test suite to confirm no API breakage.
+**Options:**
+- **Wait for upstream:** track the next mocha minor/major and re-run `npm audit` when it lands.
+- **Force via `overrides`:** add an `overrides` block to `package.json` pinning `serialize-javascript@^7.0.5` and `diff@^8.0.3`. Risk: mocha relies on the older API surface; needs a full test run to confirm.
 
-**Effort:** trivial — one commit per bump.
-
----
-
-## 7. `axios` call has a vestigial `json: true` option
-
-**Observation:** in `src/lib/utils.js` the `axios({ ... })` call passes `json: true`. Axios has never read that key — it's a leftover from `request`-era HTTP libs. It's harmless, but it misleads future readers.
-
-**Change:** delete the `json: true` line.
-
-**Effort:** one line. Include in any other touch to `utils.js`.
+**Effort:** trivial if waiting; small if going the overrides route (requires verifying mocha still works against the forced versions).
