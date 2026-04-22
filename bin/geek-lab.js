@@ -60,6 +60,9 @@ const deps = {
     write: writeConfig,
     resolveValue: resolveConfigValue,
   },
+  paths: {
+    userDirectory: () => paths.userDirectory(os),
+  },
   http: { request: httpClient.request },
 };
 

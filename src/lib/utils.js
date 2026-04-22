@@ -11,10 +11,6 @@ const mysql = require('../utils/mysql');
 const actions = require('../utils/actions');
 
 const UTILS = {
-  getUserDirectory() {
-    return paths.userDirectory(os);
-  },
-
   readInternalCliFile(fileName) {
     const filePath = paths.internalFile(os, fileName);
     try {
