@@ -1,17 +1,12 @@
-exports.command = 'default-actions';
-exports.describe = 'show current default-actions for cli';
+module.exports = ({ paths }) => ({
+  command: 'default-actions',
+  describe: 'show current default-actions for cli',
+  builder: (yargs) => yargs.example('$0 default-actions'),
+  handler: () => {
+    const msg = `Default actions are located at:` +
+      `\n\n${paths.list([paths.defaultActions()]).join('\n')}`;
 
-exports.builder = (yargs) => yargs
-  .example('$0 default-actions');
-
-const UTILS = require('../../lib/utils');
-
-exports.handler = () => {
-  const msg = `Default actions are located at:` +
-  `\n\n${UTILS.getActionsFromPath([
-    UTILS.getDefaultActionsPath(),
-  ]).join('\n')}`;
-
-  console.log(msg);
-  return msg;
-};
+    console.log(msg);
+    return msg;
+  },
+});

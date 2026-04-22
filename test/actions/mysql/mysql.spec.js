@@ -1,44 +1,64 @@
 const assert = require('node:assert/strict');
-const yargs = require('yargs');
 const sinon = require('sinon');
+const yargs = require('yargs');
 
-const mysqlAction = require('../../../src/actions/mysql/mysql');
-const utils = require('../../../src/lib/utils');
+const cases = [
+  {
+    factory: require('../../../src/actions/mysql/mysql'),
+    command: 'mysql',
+    argName: 'query',
+    value: 'select * from heroes where is_superhero = true',
+  },
+  {
+    factory: require('../../../src/actions/mysql/mysql-describe-table'),
+    command: 'mysql-describe-table',
+    argName: 'table',
+    value: 'humans',
+  },
+  {
+    factory: require('../../../src/actions/mysql/mysql-find-column'),
+    command: 'mysql-find-column',
+    argName: 'column',
+    value: 'is_superhero',
+  },
+  {
+    factory: require('../../../src/actions/mysql/mysql-find-table'),
+    command: 'mysql-find-table',
+    argName: 'table',
+    value: 'sidekicks',
+  },
+];
 
 describe('#actions/mysql', () => {
+  cases.forEach(({ factory, command, argName, value }) => {
+    describe(`#${command}`, () => {
+      it('passes a query containing the user-provided value to mysql.query', async () => {
+        const query = sinon.stub().resolves({ rows: [] });
+        const action = factory({ mysql: { query } });
+        action.builder(yargs);
 
-  afterEach(() => {
-    sinon.restore();
-  });
+        await action.handler({ [argName]: value });
 
-  it('should execute a mysql command given', (done) => {
-    const stub = sinon.stub().returns({ rows: []});
+        assert.strictEqual(action.command, command);
+        assert.strictEqual(query.calledOnce, true);
+        assert.ok(
+          query.getCall(0).args[0].includes(value),
+          `expected query to include "${value}", got "${query.getCall(0).args[0]}"`
+        );
+      });
 
-    sinon.replace(utils, 'performMySQLQuery', stub);
-    const query = 'select * from universe where is_superhero = true';
-    mysqlAction.builder(yargs);
-    mysqlAction.handler({
-      query: query,
-    }).then(() => {
-      const stubCalledParams = stub.getCall(0);
-      assert.ok((stubCalledParams.toString()).includes(query));
-      done();
-    });
-  });
+      it('wraps query failures with the original cause and the user input', async () => {
+        const cause = 'monkeys forced it to fail';
+        const query = sinon.stub().rejects(new Error(cause));
+        const action = factory({ mysql: { query } });
 
-  it('should handle errors properly and show query + exception', (done) => {
-    const exceptionMessage = 'monkeys forced it to fail';
-    const stub = sinon.stub().throws(exceptionMessage);
-
-    sinon.replace(utils, 'performMySQLQuery', stub);
-    const query = 'select * from universe where is_superhero = true';
-    mysqlAction.builder(yargs);
-    mysqlAction.handler({
-      query: query,
-    }).catch((e) => {
-      assert.ok((e.toString()).includes(query));
-      assert.ok((e.toString()).includes(exceptionMessage));
-      done();
+        await assert.rejects(
+          action.handler({ [argName]: value }),
+          (err) => err.message.includes('Failed to execute query')
+            && err.message.includes(cause)
+            && err.message.includes(value)
+        );
+      });
     });
   });
 });

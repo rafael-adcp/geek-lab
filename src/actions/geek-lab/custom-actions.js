@@ -1,18 +1,12 @@
-exports.command = 'custom-actions';
-exports.describe = 'show current custom-actions for cli';
+module.exports = ({ config, paths }) => ({
+  command: 'custom-actions',
+  describe: 'show current custom-actions for cli',
+  builder: (yargs) => yargs.example('$0 custom-actions'),
+  handler: () => {
+    const msg = `Custom actions are located at:` +
+      `\n\n${paths.list(config.read().customActionsPath).join('\n')}`;
 
-exports.builder = (yargs) => yargs
-  .example('$0 custom-actions');
-
-const UTILS = require('../../lib/utils');
-
-exports.handler = () => {
-  const msg = `Custom actions are located at:` +
-    `\n\n${UTILS.getActionsFromPath(
-      UTILS.readConfig().customActionsPath
-    ).join('\n')}`;
-
-  console.log(msg);
-  return msg;
-
-};
+    console.log(msg);
+    return msg;
+  },
+});

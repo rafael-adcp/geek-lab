@@ -1,8 +1,9 @@
 const fs = require('fs');
-const UTILS = require('../lib/utils');
+const os = require('os');
+const paths = require('../utils/paths');
 console.log('Executing post install script');
 
-const localFolderPath = UTILS.getUserDirectory();
+const localFolderPath = paths.userDirectory(os);
 
 if (!fs.existsSync(localFolderPath)) {
   console.log(`Creating local folder for geek-lab at ${localFolderPath}`);
