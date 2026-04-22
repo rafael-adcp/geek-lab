@@ -10,6 +10,7 @@ const clock = require('../utils/clock');
 const config = require('../utils/config');
 const metrics = require('../utils/metrics');
 const http = require('../utils/http');
+const mysql = require('../utils/mysql');
 
 const UTILS = {
   getUserDirectory() {
@@ -144,26 +145,8 @@ const UTILS = {
   },
 
   async performMySQLQuery(query) {
-    const connection = await mysql2.createConnection({
-      host: UTILS.getConfigValue('mysqlHost'),
-      user: UTILS.getConfigValue('mysqlUser'),
-      password: UTILS.getConfigValue('mysqlPassword'),
-    });
-
-    const [rows, fields] = await connection.execute(query);
-
-    await connection.destroy();
-
-    return {
-      rows: Object.values(
-        JSON.parse(
-          JSON.stringify(
-            rows
-          )
-        )
-      ),
-      fields: fields,
-    };
+    // eslint-disable-next-line no-use-before-define -- mysqlClient is constructed below to close over UTILS
+    return mysqlClient.query(query);
   },
 };
 
@@ -172,6 +155,15 @@ const httpClient = http.createHttpClient({
   fs,
   getToken: () => UTILS.readConfig().token,
   getBaseUrl: () => UTILS.getConfigValue('apiUrl'),
+});
+
+const mysqlClient = mysql.createMysqlClient({
+  mysql2,
+  getCreds: () => ({
+    host: UTILS.getConfigValue('mysqlHost'),
+    user: UTILS.getConfigValue('mysqlUser'),
+    password: UTILS.getConfigValue('mysqlPassword'),
+  }),
 });
 
 module.exports = UTILS;
