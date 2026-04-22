@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const axios = require('axios');
+const mysql2 = require('mysql2/promise');
 
 const toString = require('lodash/toString');
 const isEmpty = require('lodash/isEmpty');
@@ -16,6 +17,7 @@ const clock = require('../src/utils/clock');
 const config = require('../src/utils/config');
 const metrics = require('../src/utils/metrics');
 const httpUtil = require('../src/utils/http');
+const mysqlUtil = require('../src/utils/mysql');
 const actionsUtil = require('../src/utils/actions');
 
 const pkg = require(path.join(__dirname, '../package.json'));
@@ -39,6 +41,16 @@ const httpClient = httpUtil.createHttpClient({
   fs,
   getToken: () => readConfig().token,
   getBaseUrl: () => resolveConfigValue('apiUrl'),
+});
+
+const mysqlClient = mysqlUtil.createMysqlClient({
+  mysql2,
+  getCreds: /* istanbul ignore next: only fires when an action calls deps.mysql.query against
+     a real DB; mysql actions are unit-tested with an injected mysql.query stub. */ () => ({
+    host: resolveConfigValue('mysqlHost'),
+    user: resolveConfigValue('mysqlUser'),
+    password: resolveConfigValue('mysqlPassword'),
+  }),
 });
 
 const customActionsPath = () => {
@@ -70,6 +82,7 @@ const deps = {
     read: readMetrics,
   },
   http: { request: httpClient.request },
+  mysql: { query: mysqlClient.query },
 };
 
 const actions = actionsUtil.discoverActions({
