@@ -9,7 +9,6 @@ const {
   performRequest,
   readInternalCliFile,
   writeInternalCliFile,
-  collectMetrics,
   performMySQLQuery,
 } = require('../../src/lib/utils');
 
@@ -209,86 +208,6 @@ describe('#src/lib/utils/lib/writeInternalCliFile', () => {
       done();
     }
   });
-});
-
-describe('#src/lib/utils/lib/collectMetrics', () => {
-  afterEach(() => {
-    sinon.restore();
-  });
-
-  it('should track metrics if config variable is true', () => {
-    const readConfigStub = sinon.stub().returns({
-      'collectMetrics': true,
-    });
-
-    sinon.replace(utils, 'readConfig', readConfigStub);
-
-    const readInternalCliFileStub = sinon.stub().returns({
-      'totalUsage': {},
-      'dailyUsage': {},
-    });
-
-    sinon.replace(utils, 'readInternalCliFile', readInternalCliFileStub);
-
-    const writeInternalCliFileStub = sinon.stub().returns();
-    sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
-
-    collectMetrics('magicInMe');
-    const [, writtenData] = writeInternalCliFileStub.getCall(0).args;
-    const today = new Intl.DateTimeFormat('en-GB').format(new Date());
-
-    assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
-    assert.strictEqual(writtenData.dailyUsage[today].magicInMe, 1);
-    assert.strictEqual(writtenData.totalUsage.magicInMe, 1);
-  });
-
-  it('should not track metrics if config variable is false', () => {
-    const readConfigStub = sinon.stub().returns({
-      'collectMetrics': false,
-    });
-
-    sinon.replace(utils, 'readConfig', readConfigStub);
-
-    const writeInternalCliFileStub = sinon.stub().returns();
-    sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
-
-    collectMetrics('magicInMe');
-    assert.strictEqual(writeInternalCliFileStub.calledOnce, false);
-  });
-
-  it('should reuse entry while tracking metrics if available', () => {
-    const readConfigStub = sinon.stub().returns({
-      'collectMetrics': true,
-    });
-
-    sinon.replace(utils, 'readConfig', readConfigStub);
-
-    const readInternalCliFileStub = sinon.stub().returns({
-      'totalUsage': {
-        'magicInMe': 1,
-      },
-      'dailyUsage': {
-        [new Intl.DateTimeFormat('en-GB').format(new Date())]: {
-          magicInMe: 1,
-        },
-      },
-    });
-
-    sinon.replace(utils, 'readInternalCliFile', readInternalCliFileStub);
-
-    const writeInternalCliFileStub = sinon.stub().returns();
-    sinon.replace(utils, 'writeInternalCliFile', writeInternalCliFileStub);
-
-    collectMetrics('magicInMe');
-    const [, writtenData] = writeInternalCliFileStub.getCall(0).args;
-    const today = new Intl.DateTimeFormat('en-GB').format(new Date());
-
-    assert.strictEqual(writeInternalCliFileStub.calledOnce, true);
-    assert.strictEqual(writtenData.dailyUsage[today].magicInMe, 2);
-    assert.strictEqual(writtenData.totalUsage.magicInMe, 2);
-
-  });
-
 });
 
 describe('#src/lib/utils/lib/performMySQLQuery', () => {

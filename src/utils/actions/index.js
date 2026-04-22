@@ -12,13 +12,14 @@ function listFiles({ fs, pathLib, dirs }) {
   return files;
 }
 
-function discoverActions({ fs, pathLib, loader, dirs }) {
+function discoverActions({ fs, pathLib, loader, dirs, deps }) {
   const files = listFiles({ fs, pathLib, dirs });
   const seen = [];
   const actions = [];
 
   for (const file of files) {
-    const action = loader(file);
+    const loaded = loader(file);
+    const action = typeof loaded === 'function' ? loaded(deps) : loaded;
     actions.push(action);
     const dup = _.find(seen, (o) => _.isEqual(o.command, action.command));
 

@@ -35,6 +35,20 @@ describe('#e2e/metrics', () => {
     assert.strictEqual(parsed.dailyUsage['10/01/2020'].batman, 3);
   });
 
+  it('does not update the metrics file when collectMetrics is disabled in config', async () => {
+    env = createCliEnv({
+      config: { collectMetrics: false },
+      metrics: { totalUsage: { 'geek-lab': 5 }, dailyUsage: {} },
+    });
+
+    const { status } = await env.run(['metrics']);
+
+    assert.strictEqual(status, 0);
+    const after = env.readMetrics();
+    assert.strictEqual(after.totalUsage['geek-lab'], 5);
+    assert.deepStrictEqual(after.dailyUsage, {});
+  });
+
   it('generates an HTML report under src/handlebars when --pretty is passed', async () => {
     env = createCliEnv({
       metrics: {

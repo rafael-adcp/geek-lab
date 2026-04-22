@@ -2,13 +2,10 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const axios = require('axios');
-const _ = require('lodash');
 const mysql2 = require('mysql2/promise');
 
 const paths = require('../utils/paths');
-const clock = require('../utils/clock');
 const config = require('../utils/config');
-const metrics = require('../utils/metrics');
 const http = require('../utils/http');
 const mysql = require('../utils/mysql');
 const actions = require('../utils/actions');
@@ -53,21 +50,6 @@ const UTILS = {
     return UTILS.readInternalCliFile('metrics_geek-lab.json');
   },
 
-  collectMetrics(command) {
-    if (!UTILS.readConfig().collectMetrics) return;
-
-    // when the cli is called without params, just to prevent metrics to add ""
-    const normalized = _.isEmpty(command) ? 'geek-lab' : command;
-
-    const updated = metrics.recordUsage({
-      store: UTILS.readMetricsFile(),
-      clock,
-      command: normalized,
-    });
-
-    UTILS.writeInternalCliFile('metrics_geek-lab.json', updated);
-  },
-
   getConfigValue(key) {
     return config.resolveValue(UTILS.readConfig(), key);
   },
@@ -83,20 +65,6 @@ const UTILS = {
 
   getDefaultActionsPath() {
     return paths.defaultActionsPath();
-  },
-
-  getCustomActionsPath() {
-    return _.isEmpty(UTILS.readConfig().customActionsPath)
-      ? [] : UTILS.readConfig().customActionsPath;
-  },
-
-  getAllActions() {
-    return actions.discoverActions({
-      fs,
-      pathLib: path,
-      loader: require,
-      dirs: _.union([UTILS.getDefaultActionsPath()], UTILS.getCustomActionsPath()),
-    });
   },
 
   async performMySQLQuery(query) {

@@ -20,6 +20,35 @@ describe('#e2e/custom-actions', () => {
     assert.ok(stdout.includes('Custom actions are located at:'));
   });
 
+  it('exits non-zero with a duplicate-command error when a custom action collides with a built-in command', async () => {
+    env = createCliEnv();
+
+    const customDir = path.join(env.home, 'my-actions');
+    fs.mkdirSync(customDir);
+    fs.writeFileSync(
+      path.join(customDir, 'shadow-cget.js'),
+      `module.exports = () => ({
+  command: 'cget',
+  describe: 'colliding action',
+  builder: (y) => y,
+  handler: () => {},
+});
+`
+    );
+
+    const cfg = env.readConfig();
+    cfg.customActionsPath = [customDir];
+    env.writeConfig(cfg);
+
+    const { stdout, stderr, status } = await env.run(['cget']);
+
+    assert.notStrictEqual(status, 0);
+    assert.ok(
+      (stdout + stderr).includes('Duplicate command provided'),
+      `expected duplicate-command error message, got:\n${stdout}\n${stderr}`
+    );
+  });
+
   it('lists every file discovered under customActionsPath', async () => {
     env = createCliEnv();
 
