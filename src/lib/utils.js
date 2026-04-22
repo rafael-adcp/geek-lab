@@ -6,6 +6,7 @@ const _ = require('lodash');
 const mysql2 = require('mysql2/promise');
 
 const paths = require('../utils/paths');
+const clock = require('../utils/clock');
 
 const UTILS = {
   getUserDirectory() {
@@ -67,7 +68,7 @@ const UTILS = {
       //increasing total usage of command
       metricsFileContent.totalUsage[command]++;
 
-      const currentDate = new Intl.DateTimeFormat('en-GB').format(new Date());
+      const currentDate = new Intl.DateTimeFormat('en-GB').format(clock.now());
 
       // creating entry for date if not there yet
       if (!metricsFileContent.dailyUsage[currentDate]) {
