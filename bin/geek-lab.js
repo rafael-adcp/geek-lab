@@ -46,11 +46,12 @@ const customActionsPath = () => {
   return isEmpty(configured) ? [] : configured;
 };
 
+const readMetrics = () => JSON.parse(fs.readFileSync(metricsPath, 'utf8'));
+
 const recordMetrics = (command) => {
   if (!readConfig().collectMetrics) return;
   const normalized = isEmpty(command) ? 'geek-lab' : command;
-  const store = JSON.parse(fs.readFileSync(metricsPath, 'utf8'));
-  const updated = metrics.recordUsage({ store, clock, command: normalized });
+  const updated = metrics.recordUsage({ store: readMetrics(), clock, command: normalized });
   fs.writeFileSync(metricsPath, JSON.stringify(updated, null, '  '));
 };
 
@@ -62,6 +63,11 @@ const deps = {
   },
   paths: {
     userDirectory: () => paths.userDirectory(os),
+    defaultActions: () => paths.defaultActionsPath(),
+    list: (dirs) => actionsUtil.listFiles({ fs, pathLib: path, dirs }),
+  },
+  metrics: {
+    read: readMetrics,
   },
   http: { request: httpClient.request },
 };

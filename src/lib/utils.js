@@ -1,4 +1,3 @@
-const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const axios = require('axios');
@@ -8,7 +7,6 @@ const paths = require('../utils/paths');
 const config = require('../utils/config');
 const http = require('../utils/http');
 const mysql = require('../utils/mysql');
-const actions = require('../utils/actions');
 
 const UTILS = {
   readInternalCliFile(fileName) {
@@ -38,12 +36,11 @@ const UTILS = {
     }
   },
 
+  /* istanbul ignore next: transitional shim — only reached via the mysql closure chain
+     (no e2e for mysql per Phase 0); util.spec.js exercises this method via sinon.replace,
+     not the real body. utils.js is deleted in Phase 3. */
   readConfig() {
     return config.readConfig(fs, paths.internalFile(os, 'config_geek-lab.json'));
-  },
-
-  readMetricsFile() {
-    return UTILS.readInternalCliFile('metrics_geek-lab.json');
   },
 
   getConfigValue(key) {
@@ -53,14 +50,6 @@ const UTILS = {
   async performRequest(params) {
     // eslint-disable-next-line no-use-before-define -- httpClient is constructed below to close over UTILS
     return httpClient.request(params);
-  },
-
-  getActionsFromPath(dirs) {
-    return actions.listFiles({ fs, pathLib: path, dirs });
-  },
-
-  getDefaultActionsPath() {
-    return paths.defaultActionsPath();
   },
 
   async performMySQLQuery(query) {
