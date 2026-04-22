@@ -1,18 +1,19 @@
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const axios = require('axios');
 const _ = require('lodash');
 const mysql2 = require('mysql2/promise');
 
+const paths = require('../utils/paths');
+
 const UTILS = {
   getUserDirectory() {
-    const homePath = require('os').homedir();
-    return path.join(`${homePath}/geek-lab_local`);
+    return paths.userDirectory(os);
   },
 
   readInternalCliFile(fileName) {
-    const homePath = UTILS.getUserDirectory();
-    const filePath = `${homePath}/${fileName}`;
+    const filePath = paths.internalFile(os, fileName);
     try {
       return JSON.parse(fs.readFileSync(filePath, 'utf8'));
     } catch (e) {
@@ -27,8 +28,7 @@ const UTILS = {
   },
 
   writeInternalCliFile(fileName, data) {
-    const homePath = UTILS.getUserDirectory();
-    const filePath = `${homePath}/${fileName}`;
+    const filePath = paths.internalFile(os, fileName);
     try {
       fs.writeFileSync(filePath, JSON.stringify(data, null, '  '));
     } catch (e) {
@@ -155,7 +155,7 @@ const UTILS = {
   },
 
   getDefaultActionsPath() {
-    return path.join(__dirname, '../actions');
+    return paths.defaultActionsPath();
   },
 
   getCustomActionsPath() {
