@@ -8,6 +8,7 @@ const mysql2 = require('mysql2/promise');
 const paths = require('../utils/paths');
 const clock = require('../utils/clock');
 const config = require('../utils/config');
+const metrics = require('../utils/metrics');
 
 const UTILS = {
   getUserDirectory() {
@@ -50,43 +51,18 @@ const UTILS = {
   },
 
   collectMetrics(command) {
+    if (!UTILS.readConfig().collectMetrics) return;
 
-    //allowing the user to opt in / out from metrics
+    // when the cli is called without params, just to prevent metrics to add ""
+    const normalized = _.isEmpty(command) ? 'geek-lab' : command;
 
-    if (UTILS.readConfig().collectMetrics) {
+    const updated = metrics.recordUsage({
+      store: UTILS.readMetricsFile(),
+      clock,
+      command: normalized,
+    });
 
-      // when the cli is called without params, just to prevent metrics to add ""
-      command = _.isEmpty(command) ? 'geek-lab' : command;
-
-      const fileName = 'metrics_geek-lab.json';
-      const metricsFileContent = UTILS.readMetricsFile();
-
-      if (!metricsFileContent.totalUsage[command]) {
-        //creating entry for command if not there yet
-        metricsFileContent.totalUsage[command] = 0;
-      }
-
-      //increasing total usage of command
-      metricsFileContent.totalUsage[command]++;
-
-      const currentDate = new Intl.DateTimeFormat('en-GB').format(clock.now());
-
-      // creating entry for date if not there yet
-      if (!metricsFileContent.dailyUsage[currentDate]) {
-        metricsFileContent.dailyUsage[currentDate] = {};
-      }
-
-      //checking if theres an entry for command for that date
-      if (!metricsFileContent.dailyUsage[currentDate][command]) {
-        metricsFileContent.dailyUsage[currentDate][command] = 0;
-      }
-      metricsFileContent.dailyUsage[currentDate][command]++;
-
-      UTILS.writeInternalCliFile(
-        fileName,
-        metricsFileContent
-      );
-    }
+    UTILS.writeInternalCliFile('metrics_geek-lab.json', updated);
   },
 
   getConfigValue(key) {
