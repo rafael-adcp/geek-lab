@@ -7,6 +7,7 @@ const mysql2 = require('mysql2/promise');
 
 const paths = require('../utils/paths');
 const clock = require('../utils/clock');
+const config = require('../utils/config');
 
 const UTILS = {
   getUserDirectory() {
@@ -41,7 +42,7 @@ const UTILS = {
   },
 
   readConfig() {
-    return UTILS.readInternalCliFile('config_geek-lab.json');
+    return config.readConfig(fs, paths.internalFile(os, 'config_geek-lab.json'));
   },
 
   readMetricsFile() {
@@ -89,16 +90,7 @@ const UTILS = {
   },
 
   getConfigValue(key) {
-    const configFile = UTILS.readConfig();
-    const currentEnv = configFile.env;
-    if (_.isEmpty(currentEnv)) {
-      throw new Error('Invalid env for cli');
-    } else if (_.isEmpty(configFile[currentEnv])) {
-      throw new Error(`Environment ${currentEnv} is not set on config file.`);
-    } else if (!configFile[currentEnv][key] && _.isEmpty(configFile[currentEnv][key])) {
-      throw new Error(`Key "${key}" is not set for environment "${currentEnv}"`);
-    }
-    return configFile[currentEnv][key];
+    return config.resolveValue(UTILS.readConfig(), key);
   },
 
   async performRequest(params) {

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const fs = require('fs');
 const { createCliEnv } = require('../helpers/e2e');
 
 describe('#e2e/config', () => {
@@ -31,6 +32,18 @@ describe('#e2e/config', () => {
 
     assert.strictEqual(status, 0);
     assert.strictEqual(env.readConfig().dev.apiUrl, 'http://new');
+  });
+
+  it('fails with a helpful diagnostic when the config file is corrupted', async () => {
+    env = createCliEnv();
+    fs.writeFileSync(env.configPath, '{ this is not json');
+
+    const { status, stdout, stderr } = await env.run(['config']);
+
+    assert.notStrictEqual(status, 0);
+    const out = stdout + stderr;
+    assert.ok(out.includes('Failed to read file'));
+    assert.ok(out.includes(env.configPath));
   });
 
   it('creates a new environment on the fly when one is not yet defined', async () => {
