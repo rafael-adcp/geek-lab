@@ -9,6 +9,7 @@ const paths = require('../utils/paths');
 const clock = require('../utils/clock');
 const config = require('../utils/config');
 const metrics = require('../utils/metrics');
+const http = require('../utils/http');
 
 const UTILS = {
   getUserDirectory() {
@@ -70,45 +71,8 @@ const UTILS = {
   },
 
   async performRequest(params) {
-
-    if (_.isEmpty(params)) {
-      throw new Error('No params were provided');
-    }
-    const method = params.method || null;
-    let endpoint = params.endpoint || null;
-
-    let data;
-    if (!_.isEmpty(params.data)) {
-      data = _.startsWith(params.data, '@') ? fs.readFileSync(params.data.replace('@', ''), 'utf8') : params.data;
-    }
-
-    if (!method || !endpoint) {
-      console.log('provided information:');
-      console.log(`method: ${method}`);
-      console.log(`endpoint: ${endpoint}`);
-      throw new Error(`To perform a request you must provide at least a method and an endpoint`);
-    }
-
-    if (!['POST', 'GET', 'DELETE', 'PUT'].includes(method.toUpperCase())) {
-      console.log(`provided: ${method.toUpperCase()}`);
-      throw new Error('Invalid method provided');
-    }
-
-    //preventing double "/""
-    endpoint = _.startsWith(params.endpoint, '/') ? params.endpoint : `/${params.endpoint}`;
-
-    const res = await axios.request({
-      method: method.toUpperCase(),
-      url: UTILS.getConfigValue('apiUrl') + endpoint,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': UTILS.readConfig().token,
-      },
-      data: data,
-    });
-
-    const response = await res.data;
-    return response;
+    // eslint-disable-next-line no-use-before-define -- httpClient is constructed below to close over UTILS
+    return httpClient.request(params);
   },
 
   getActionsFromPath(paths) {
@@ -202,5 +166,12 @@ const UTILS = {
     };
   },
 };
+
+const httpClient = http.createHttpClient({
+  axios,
+  fs,
+  getToken: () => UTILS.readConfig().token,
+  getBaseUrl: () => UTILS.getConfigValue('apiUrl'),
+});
 
 module.exports = UTILS;
