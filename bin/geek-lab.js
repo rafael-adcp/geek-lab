@@ -31,12 +31,14 @@ const configPath = paths.internalFile(os, 'config_geek-lab.json');
 const metricsPath = paths.internalFile(os, 'metrics_geek-lab.json');
 
 const readConfig = () => config.readConfig(fs, configPath);
+const resolveConfigValue = (key) => config.resolveValue(readConfig(), key);
+const writeConfig = (data) => fs.writeFileSync(configPath, JSON.stringify(data, null, '  '));
 
 const httpClient = httpUtil.createHttpClient({
   axios,
   fs,
   getToken: () => readConfig().token,
-  getBaseUrl: () => config.resolveValue(readConfig(), 'apiUrl'),
+  getBaseUrl: () => resolveConfigValue('apiUrl'),
 });
 
 const customActionsPath = () => {
@@ -53,6 +55,11 @@ const recordMetrics = (command) => {
 };
 
 const deps = {
+  config: {
+    read: readConfig,
+    write: writeConfig,
+    resolveValue: resolveConfigValue,
+  },
   http: { request: httpClient.request },
 };
 

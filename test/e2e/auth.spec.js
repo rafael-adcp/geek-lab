@@ -76,6 +76,36 @@ describe('#e2e/auth', () => {
     assert.ok(new Date(config.tokenExpires) > new Date());
   });
 
+  it('fails with "Failed to execute api call" when the auth endpoint is unreachable', async () => {
+    server = await startHttpServer((req, res) => {
+      res.statusCode = 200;
+      res.end('{}');
+    });
+    const reachable = server.url;
+    await server.close();
+    server = null;
+
+    env = createCliEnv({
+      config: {
+        env: 'dev',
+        token: null,
+        tokenExpires: null,
+        dev: {
+          apiUrl: reachable,
+          apiAuthenticationEndpoint: '/auth',
+          apiTokenResponseField: 'token',
+          apiAuthenticationExpiresInMinutes: 120,
+          apiAuthenticationJson: JSON.stringify({ auth: { username: 'u', password: 'p' } }),
+        },
+      },
+    });
+
+    const { status, stdout, stderr } = await env.run(['auth']);
+
+    assert.notStrictEqual(status, 0);
+    assert.ok((stdout + stderr).includes('Failed to execute api call'));
+  });
+
   it('fails when the API responds without the expected shape', async () => {
     server = await startHttpServer((req, res) => {
       res.setHeader('Content-Type', 'application/json');
