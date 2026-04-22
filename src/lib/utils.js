@@ -11,6 +11,7 @@ const config = require('../utils/config');
 const metrics = require('../utils/metrics');
 const http = require('../utils/http');
 const mysql = require('../utils/mysql');
+const actions = require('../utils/actions');
 
 const UTILS = {
   getUserDirectory() {
@@ -76,16 +77,8 @@ const UTILS = {
     return httpClient.request(params);
   },
 
-  getActionsFromPath(paths) {
-    let files = [];
-    for (const actionPath of paths) {
-      const entries = fs.readdirSync(actionPath, { recursive: true, withFileTypes: true });
-      const filePaths = entries
-        .filter((entry) => entry.isFile())
-        .map((entry) => path.join(entry.parentPath, entry.name));
-      files = _.union(files, filePaths);
-    }
-    return files;
+  getActionsFromPath(dirs) {
+    return actions.listFiles({ fs, pathLib: path, dirs });
   },
 
   getDefaultActionsPath() {
@@ -98,50 +91,12 @@ const UTILS = {
   },
 
   getAllActions() {
-    const defaultActionsPath = UTILS.getDefaultActionsPath();
-    const defaultActions = UTILS.getActionsFromPath([
-      defaultActionsPath,
-    ]);
-
-    const customActions = UTILS.getActionsFromPath(
-      UTILS.getCustomActionsPath()
-    );
-
-    const files = _.union(
-      defaultActions,
-      customActions
-    );
-
-    const actionsDetails = [];
-    const finalActions = [];
-
-    // reading default actions from cli
-    for (const file of files) {
-      const action = require(file);
-      finalActions.push(action);
-      const filtered = _.find(actionsDetails, (o) => { return _.isEqual(o.command, action.command); });
-
-      //checking if the command already exists
-      const commandExists = filtered ? true : false;
-
-      if (commandExists) {
-        console.log(
-          `Duplicate command provided, commands should be unique!
-          command "${action.command}"
-          from ${file}
-          already exists
-          it was originally added from: ${filtered.path}`
-        );
-        throw new Error('Duplicate command provided');
-
-      } else {
-        actionsDetails.push({
-          command: action.command,
-          path: file,
-        });
-      }
-    }
-    return finalActions;
+    return actions.discoverActions({
+      fs,
+      pathLib: path,
+      loader: require,
+      dirs: _.union([UTILS.getDefaultActionsPath()], UTILS.getCustomActionsPath()),
+    });
   },
 
   async performMySQLQuery(query) {
