@@ -1,4 +1,4 @@
-const { spawnSync } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -44,15 +44,21 @@ function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
 
   function run(args = []) {
     const argv = Array.isArray(args) ? args : String(args).split(' ').filter(Boolean);
-    const result = spawnSync(process.execPath, [BIN_PATH, ...argv], {
-      env: { ...process.env, HOME: home, USERPROFILE: home },
-      encoding: 'utf8',
+    return new Promise((resolve) => {
+      const child = spawn(process.execPath, [BIN_PATH, ...argv], {
+        env: { ...process.env, HOME: home, USERPROFILE: home },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let stdout = '';
+      let stderr = '';
+      child.stdout.on('data', (c) => { stdout += c.toString('utf8'); });
+      child.stderr.on('data', (c) => { stderr += c.toString('utf8'); });
+      const killer = setTimeout(() => child.kill('SIGKILL'), 10000);
+      child.on('exit', (status, signal) => {
+        clearTimeout(killer);
+        resolve({ stdout, stderr, status, signal });
+      });
     });
-    return {
-      stdout: result.stdout || '',
-      stderr: result.stderr || '',
-      status: result.status,
-    };
   }
 
   function readConfig() {
@@ -91,6 +97,7 @@ function startHttpServer(handler) {
       req.on('data', (c) => chunks.push(c));
       req.on('end', () => {
         const body = Buffer.concat(chunks).toString('utf8');
+        res.setHeader('Connection', 'close');
         handler(req, res, body);
       });
     });
@@ -99,7 +106,10 @@ function startHttpServer(handler) {
       resolve({
         port,
         url: `http://127.0.0.1:${port}`,
-        close: () => new Promise((r) => server.close(r)),
+        close: () => new Promise((r) => {
+          server.close(r);
+          server.closeAllConnections();
+        }),
       });
     });
   });

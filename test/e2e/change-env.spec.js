@@ -9,7 +9,7 @@ describe('#e2e/change-env', () => {
     env = null;
   });
 
-  it('switches the active environment and clears the cached token', () => {
+  it('switches the active environment and clears the cached token', async () => {
     env = createCliEnv({
       config: {
         env: 'dev',
@@ -19,7 +19,7 @@ describe('#e2e/change-env', () => {
       },
     });
 
-    const { stdout, status } = env.run(['change-env', '--env', 'prod']);
+    const { stdout, status } = await env.run(['change-env', '--env', 'prod']);
 
     assert.strictEqual(status, 0);
     assert.ok(stdout.includes('Successfully moved cli to use "prod"'));
@@ -30,10 +30,10 @@ describe('#e2e/change-env', () => {
     assert.strictEqual(config.tokenExpires, null);
   });
 
-  it('fails when the target environment is missing from config', () => {
+  it('fails when the target environment is missing from config', async () => {
     env = createCliEnv({ config: { env: 'dev' } });
 
-    const { status, stdout, stderr } = env.run(['change-env', '--env', 'unknown']);
+    const { status, stdout, stderr } = await env.run(['change-env', '--env', 'unknown']);
 
     assert.notStrictEqual(status, 0);
     const output = stdout + stderr;
@@ -44,10 +44,10 @@ describe('#e2e/change-env', () => {
     assert.strictEqual(env.readConfig().env, 'dev');
   });
 
-  it('fails when --env is not provided', () => {
+  it('fails when --env is not provided', async () => {
     env = createCliEnv();
 
-    const { status, stdout, stderr } = env.run(['change-env']);
+    const { status, stdout, stderr } = await env.run(['change-env']);
 
     assert.notStrictEqual(status, 0);
     assert.ok((stdout + stderr).includes('--env'));

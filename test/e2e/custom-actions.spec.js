@@ -11,16 +11,16 @@ describe('#e2e/custom-actions', () => {
     env = null;
   });
 
-  it('prints the header with no action entries when customActionsPath is empty', () => {
+  it('prints the header with no action entries when customActionsPath is empty', async () => {
     env = createCliEnv({ config: { customActionsPath: [] } });
 
-    const { stdout, status } = env.run(['custom-actions']);
+    const { stdout, status } = await env.run(['custom-actions']);
 
     assert.strictEqual(status, 0);
     assert.ok(stdout.includes('Custom actions are located at:'));
   });
 
-  it('lists every file discovered under customActionsPath', () => {
+  it('lists every file discovered under customActionsPath', async () => {
     env = createCliEnv();
 
     const customDir = path.join(env.home, 'my-actions');
@@ -39,7 +39,7 @@ exports.handler = () => {};
     cfg.customActionsPath = [customDir];
     env.writeConfig(cfg);
 
-    const { stdout, status } = env.run(['custom-actions']);
+    const { stdout, status } = await env.run(['custom-actions']);
 
     assert.strictEqual(status, 0);
     assert.ok(stdout.includes('Custom actions are located at:'));

@@ -9,10 +9,10 @@ describe('#e2e/config', () => {
     env = null;
   });
 
-  it('prints the current config file contents and its location', () => {
+  it('prints the current config file contents and its location', async () => {
     env = createCliEnv({ config: { env: 'printme' } });
 
-    const { stdout, status } = env.run(['config']);
+    const { stdout, status } = await env.run(['config']);
 
     assert.strictEqual(status, 0);
     assert.ok(stdout.includes('Configuration file can be found at'));
@@ -20,12 +20,12 @@ describe('#e2e/config', () => {
     assert.ok(stdout.includes('"env": "printme"'));
   });
 
-  it('sets a value on an existing environment', () => {
+  it('sets a value on an existing environment', async () => {
     env = createCliEnv({
       config: { dev: { apiUrl: 'http://old' } },
     });
 
-    const { status } = env.run([
+    const { status } = await env.run([
       'config', '--env', 'dev', '--key', 'apiUrl', '--value', 'http://new',
     ]);
 
@@ -33,10 +33,10 @@ describe('#e2e/config', () => {
     assert.strictEqual(env.readConfig().dev.apiUrl, 'http://new');
   });
 
-  it('creates a new environment on the fly when one is not yet defined', () => {
+  it('creates a new environment on the fly when one is not yet defined', async () => {
     env = createCliEnv();
 
-    const { status } = env.run([
+    const { status } = await env.run([
       'config', '--env', 'fresh', '--key', 'apiUrl', '--value', 'http://fresh',
     ]);
 

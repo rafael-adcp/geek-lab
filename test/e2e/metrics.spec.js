@@ -18,7 +18,7 @@ describe('#e2e/metrics', () => {
     }
   });
 
-  it('prints the metrics file contents as formatted JSON', () => {
+  it('prints the metrics file contents as formatted JSON', async () => {
     env = createCliEnv({
       metrics: {
         totalUsage: { 'geek-lab': 7, batman: 3 },
@@ -26,7 +26,7 @@ describe('#e2e/metrics', () => {
       },
     });
 
-    const { stdout, status } = env.run(['metrics']);
+    const { stdout, status } = await env.run(['metrics']);
 
     assert.strictEqual(status, 0);
     const parsed = JSON.parse(stdout);
@@ -35,7 +35,7 @@ describe('#e2e/metrics', () => {
     assert.strictEqual(parsed.dailyUsage['10/01/2020'].batman, 3);
   });
 
-  it('generates an HTML report under src/handlebars when --pretty is passed', () => {
+  it('generates an HTML report under src/handlebars when --pretty is passed', async () => {
     env = createCliEnv({
       metrics: {
         totalUsage: { 'geek-lab': 1, batman: 2, robin: 3 },
@@ -46,7 +46,7 @@ describe('#e2e/metrics', () => {
       },
     });
 
-    const { stdout, status } = env.run(['metrics', '--pretty']);
+    const { stdout, status } = await env.run(['metrics', '--pretty']);
 
     assert.strictEqual(status, 0);
     const match = stdout.match(/located at\s+(.+awesome_metrics_graph_[^\s]+\.html)/);

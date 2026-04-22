@@ -9,10 +9,10 @@ describe('#e2e/default-actions', () => {
     env = null;
   });
 
-  it('prints the default action file paths under src/actions', () => {
+  it('prints the default action file paths under src/actions', async () => {
     env = createCliEnv();
 
-    const { stdout, status } = env.run(['default-actions']);
+    const { stdout, status } = await env.run(['default-actions']);
 
     assert.strictEqual(status, 0);
     assert.ok(stdout.includes('Default actions are located at:'));

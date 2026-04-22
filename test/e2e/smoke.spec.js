@@ -9,10 +9,10 @@ describe('#e2e/smoke', () => {
     env = null;
   });
 
-  it('runs the CLI against an isolated geek-lab_local directory', () => {
+  it('runs the CLI against an isolated geek-lab_local directory', async () => {
     env = createCliEnv({ config: { env: 'my-custom-env' } });
 
-    const { stdout, status } = env.run(['config']);
+    const { stdout, status } = await env.run(['config']);
 
     assert.strictEqual(status, 0);
     assert.ok(
