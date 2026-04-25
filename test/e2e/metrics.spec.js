@@ -1,7 +1,10 @@
-const assert = require('node:assert/strict');
-const fs = require('fs');
-const path = require('path');
-const { createCliEnv } = require('../helpers/e2e');
+import assert from 'node:assert/strict';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createCliEnv } from '../helpers/e2e.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const HANDLEBARS_DIR = path.resolve(__dirname, '../../src/handlebars');
 

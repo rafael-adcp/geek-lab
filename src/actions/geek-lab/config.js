@@ -1,4 +1,4 @@
-module.exports = ({ config, paths }) => ({
+export default ({ config, paths }) => ({
   command: 'config',
   describe: 'show and perform changes on config file',
   builder: (yargs) => yargs

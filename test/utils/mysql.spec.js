@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { createMysqlClient } = require('../../src/utils/mysql');
+import assert from 'node:assert/strict';
+import { createMysqlClient } from '../../src/utils/mysql/index.js';
 
 describe('#utils/mysql/query', () => {
   it('opens a connection with the resolved creds, executes the query, returns rows + fields, and destroys the connection', async () => {

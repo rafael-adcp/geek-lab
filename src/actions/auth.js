@@ -1,6 +1,6 @@
-const isEmpty = require('lodash/isEmpty');
+import isEmpty from 'lodash/isEmpty.js';
 
-module.exports = ({ http, config }) => ({
+export default ({ http, config }) => ({
   command: 'auth',
   describe: 'performs api authentication',
   builder: (yargs) => yargs.example('$0'),

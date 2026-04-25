@@ -1,5 +1,3 @@
-function now() {
+export function now() {
   return new Date();
 }
-
-module.exports = { now };

@@ -1,4 +1,4 @@
-module.exports = ({ http }) => ({
+export default ({ http }) => ({
   command: 'cpost',
   describe: 'performs a POST request',
   builder: (yargs) => yargs

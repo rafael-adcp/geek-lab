@@ -71,10 +71,15 @@ Every `.js` file inside those paths is loaded automatically and surfaced via `gi
 
 ## Action file shape
 
-A custom action is a [yargs command module](https://github.com/yargs/yargs/blob/master/docs/advanced.md#providing-a-command-module) with four exports:
+A custom action is a [yargs command module](https://github.com/yargs/yargs/blob/master/docs/advanced.md#providing-a-command-module) packaged as a **factory function** that receives the geek-lab dependency bag and returns the command descriptor.
+
+> **Breaking change in geek-lab v2:** geek-lab now runs as native ESM (`"type": "module"`) on Node `>=22.12`. Action files are loaded via dynamic `import()`, so:
+> - **ESM `.mjs` files** must `export default` a factory (see below).
+> - **ESM `.js` files** are supported only if the folder containing them has a `package.json` with `"type": "module"`.
+> - **CommonJS `.js` / `.cjs` files** are still loaded transparently — `module.exports = (deps) => ({...})` is interop-imported and works as-is. This is the simplest path if you don't want to think about module systems for your custom-actions folder.
 
 ```javascript
-// file name: custom_action_sample.js
+// file name: custom_action_sample.js (CommonJS — easiest, no package.json needed)
 
 /* useful references:
    https://github.com/yargs/yargs/blob/master/docs/advanced.md
@@ -82,28 +87,56 @@ A custom action is a [yargs command module](https://github.com/yargs/yargs/blob/
    and the built-in actions in geek-lab/src/actions
 */
 
-exports.command = 'COMMAND';
-exports.describe = 'DESCRIPTION';
-
-exports.builder = (yargs) => yargs
-  .example('$0 COMMAND', 'description of what this usage will do');
-
-exports.handler = () => {
-  console.log('All the things :: your first custom action worked');
-};
+module.exports = (deps) => ({
+  command: 'COMMAND',
+  describe: 'DESCRIPTION',
+  builder: (yargs) => yargs
+    .example('$0 COMMAND', 'description of what this usage will do'),
+  handler: () => {
+    console.log('All the things :: your first custom action worked');
+  },
+});
 ```
 
-| Export      | Required | Purpose                                                                |
-|-------------|----------|------------------------------------------------------------------------|
-| `command`   | yes      | The CLI verb users will type (e.g. `gik COMMAND`). Must be unique.     |
-| `describe`  | yes      | One-line summary printed by `gik --help`.                              |
-| `builder`   | no       | yargs builder — declare flags, positional args, examples.              |
-| `handler`   | yes      | Async-compatible function executed when the command runs.              |
+The same shape as ESM:
+
+```javascript
+// file name: custom_action_sample.mjs
+
+export default (deps) => ({
+  command: 'COMMAND',
+  describe: 'DESCRIPTION',
+  builder: (yargs) => yargs
+    .example('$0 COMMAND', 'description of what this usage will do'),
+  handler: () => {
+    console.log('All the things :: your first custom action worked');
+  },
+});
+```
+
+The factory receives a `deps` object wired by the CLI — use it to talk to config, http, mysql, paths, and metrics without re-implementing them:
+
+| `deps` key       | What it gives you                                                       |
+|------------------|-------------------------------------------------------------------------|
+| `config.read()`  | Parsed `config_geek-lab.json`.                                          |
+| `config.write()` | Persist a new config object.                                            |
+| `config.resolveValue(key)` | Look up a key in the active env block.                        |
+| `http.request(opts)` | Authenticated HTTP call against `apiUrl` (used by `cget`/`cpost`/...). |
+| `mysql.query(sql)` | Run a query against the configured MySQL host.                        |
+| `paths.userDirectory()` | Path to `~/geek-lab_local`.                                      |
+| `metrics.read()` | Parsed `metrics_geek-lab.json`.                                         |
+
+| Returned key | Required | Purpose                                                                |
+|--------------|----------|------------------------------------------------------------------------|
+| `command`    | yes      | The CLI verb users will type (e.g. `gik COMMAND`). Must be unique.     |
+| `describe`   | yes      | One-line summary printed by `gik --help`.                              |
+| `builder`    | no       | yargs builder — declare flags, positional args, examples.              |
+| `handler`    | yes      | Async-compatible function executed when the command runs.              |
 
 ## Best practices
 
 - **Keep names unique.** geek-lab refuses to start if two actions share the same `command`. Prefix team-specific verbs (e.g. `team1:deploy`) to avoid clashes when combining multiple folders.
-- **Don't bundle secrets.** Read tokens from your geek-lab config (`UTILS.getConfigValue(...)`) or environment variables — never hard-code them into the action file.
+- **Don't bundle secrets.** Read tokens from your geek-lab config (`deps.config.resolveValue(...)`) or environment variables — never hard-code them into the action file.
 - **Be cross-platform.** Prefer Node-native APIs (`fs`, `path`, `child_process`) over OS-specific shell tricks if you intend to share the action.
 - **Fail loudly.** Throw or `console.error` + `process.exitCode = 1` on errors so callers (and CI scripts) notice.
 

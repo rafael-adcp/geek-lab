@@ -16,8 +16,10 @@ A cross-platform CLI for collecting, sharing and running your team's everyday sc
 
 ## Requirements
 
-- **Node.js 22** or newer (current LTS line; Node 24 also supported).
+- **Node.js 22.12** or newer (current LTS line; Node 24 also supported).
 - npm 10+ (ships with Node 22).
+
+> **Note:** geek-lab v2 is published as native ESM. If you maintain custom actions, see the [migration notes](docs/custom-actions.md#action-file-shape) — CommonJS action files keep working, the dependency-injection factory shape is the recommended one going forward.
 
 ## Installation
 

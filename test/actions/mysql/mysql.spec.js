@@ -1,28 +1,33 @@
-const assert = require('node:assert/strict');
-const sinon = require('sinon');
-const yargs = require('yargs');
+import assert from 'node:assert/strict';
+import sinon from 'sinon';
+import yargs from 'yargs';
+
+import mysqlFactory from '../../../src/actions/mysql/mysql.js';
+import describeFactory from '../../../src/actions/mysql/mysql-describe-table.js';
+import findColumnFactory from '../../../src/actions/mysql/mysql-find-column.js';
+import findTableFactory from '../../../src/actions/mysql/mysql-find-table.js';
 
 const cases = [
   {
-    factory: require('../../../src/actions/mysql/mysql'),
+    factory: mysqlFactory,
     command: 'mysql',
     argName: 'query',
     value: 'select * from heroes where is_superhero = true',
   },
   {
-    factory: require('../../../src/actions/mysql/mysql-describe-table'),
+    factory: describeFactory,
     command: 'mysql-describe-table',
     argName: 'table',
     value: 'humans',
   },
   {
-    factory: require('../../../src/actions/mysql/mysql-find-column'),
+    factory: findColumnFactory,
     command: 'mysql-find-column',
     argName: 'column',
     value: 'is_superhero',
   },
   {
-    factory: require('../../../src/actions/mysql/mysql-find-table'),
+    factory: findTableFactory,
     command: 'mysql-find-table',
     argName: 'table',
     value: 'sidekicks',
@@ -35,7 +40,7 @@ describe('#actions/mysql', () => {
       it('passes a query containing the user-provided value to mysql.query', async () => {
         const query = sinon.stub().resolves({ rows: [] });
         const action = factory({ mysql: { query } });
-        action.builder(yargs);
+        action.builder(yargs());
 
         await action.handler({ [argName]: value });
 

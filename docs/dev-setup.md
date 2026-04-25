@@ -4,11 +4,13 @@ How to get geek-lab running locally so you can hack on it.
 
 ## Prerequisites
 
-- **Node.js 22+** (current LTS) — Node 24 is also supported.
+- **Node.js 22.12+** (current LTS) — Node 24 is also supported.
 - **npm 10+** (bundled with Node 22).
 - **git**.
 
 > Tip: use [nvm](https://github.com/nvm-sh/nvm) (or [nvm-windows](https://github.com/coreybutler/nvm-windows)) to switch Node versions painlessly.
+>
+> geek-lab v2 is native ESM. The minimum Node version is enforced by `engines` in `package.json` and matched in CI.
 
 ## Clone & install
 
@@ -44,7 +46,7 @@ npm unlink -g geek-lab
 ## Common workflows
 
 ```sh
-# run the test suite (mocha + nyc coverage)
+# run the test suite (mocha + c8 coverage)
 npm test
 
 # lint
@@ -54,23 +56,28 @@ npm run lint
 npm run rebuild
 ```
 
-The HTML coverage report is written to `coverage/index.html` after `npm test`.
+The HTML coverage report is written to `coverage/index.html` after `npm test`. Coverage thresholds (100/100/100/100) live in `.c8rc.json`.
 
 ## Project layout
 
 ```
-bin/             # CLI entrypoint (geek-lab.js)
+bin/             # CLI entrypoint (geek-lab.js) — wires deps, discovers actions
 src/
-  actions/       # built-in commands (yargs modules)
-  lib/           # shared utilities (config, http, mysql, metrics)
+  actions/       # built-in commands as DI factories: deps => yargs command
+  utils/         # single-responsibility utilities: config / http / mysql / metrics / paths / clock / actions
   scripts/       # post-install bootstrapping
-test/            # mocha specs (mirrors the src/ tree)
+  handlebars/    # metrics report templates
+test/
+  bin/           # CLI smoke tests
+  e2e/           # end-to-end specs that spawn the CLI against a temp HOME
+  utils/         # focused unit tests for non-trivial utilities
+  helpers/       # shared e2e harness
 docs/            # user-facing docs
 ```
 
 ## Adding a built-in action
 
-A built-in action is just a [yargs command module](https://github.com/yargs/yargs/blob/master/docs/advanced.md#providing-a-command-module) dropped into `src/actions/`. Look at the existing files there for the expected `command` / `describe` / `builder` / `handler` shape — and add a matching spec under `test/actions/`.
+Built-in actions are **dependency-injection factories** — a default-exported function that receives the `deps` bag from `bin/geek-lab.js` and returns a [yargs command module](https://github.com/yargs/yargs/blob/master/docs/advanced.md#providing-a-command-module). Mirror an existing file under `src/actions/`, then cover the new behaviour with an e2e spec under `test/e2e/` (or a focused unit test under `test/utils/` if the logic is not user-visible).
 
 ## CI
 

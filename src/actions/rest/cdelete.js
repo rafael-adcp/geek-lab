@@ -1,4 +1,4 @@
-module.exports = ({ http }) => ({
+export default ({ http }) => ({
   command: 'cdelete',
   describe: 'performs a DELETE request',
   builder: (yargs) => yargs

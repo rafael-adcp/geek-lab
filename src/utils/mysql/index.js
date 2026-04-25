@@ -1,4 +1,4 @@
-function createMysqlClient({ mysql2, getCreds }) {
+export function createMysqlClient({ mysql2, getCreds }) {
   async function query(sql) {
     const connection = await mysql2.createConnection(getCreds());
     const [rows, fields] = await connection.execute(sql);
@@ -13,4 +13,3 @@ function createMysqlClient({ mysql2, getCreds }) {
   return { query };
 }
 
-module.exports = { createMysqlClient };

@@ -1,4 +1,4 @@
-module.exports = ({ mysql }) => ({
+export default ({ mysql }) => ({
   command: 'mysql',
   describe: 'execute a mysql query',
   builder: (yargs) => yargs

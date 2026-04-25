@@ -1,12 +1,15 @@
-const handlebars = require('handlebars');
-const fs = require('fs');
-const { v1: uuidv1 } = require('uuid');
-const path = require('path');
+import handlebars from 'handlebars';
+import fs from 'fs';
+import { v1 as uuidv1 } from 'uuid';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const find = require('lodash/find');
-const isEqual = require('lodash/isEqual');
+import find from 'lodash/find.js';
+import isEqual from 'lodash/isEqual.js';
 
-module.exports = ({ metrics }) => ({
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default ({ metrics }) => ({
   command: 'metrics',
   describe: 'show current metrics for cli',
   builder: (yargs) => yargs

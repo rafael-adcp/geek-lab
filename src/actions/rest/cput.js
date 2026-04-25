@@ -1,4 +1,4 @@
-module.exports = ({ http }) => ({
+export default ({ http }) => ({
   command: 'cput',
   describe: 'performs a PUT request',
   builder: (yargs) => yargs

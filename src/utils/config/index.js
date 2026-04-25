@@ -1,6 +1,6 @@
-const _ = require('lodash');
+import _ from 'lodash';
 
-function readConfig(fs, configPath) {
+export function readConfig(fs, configPath) {
   try {
     return JSON.parse(fs.readFileSync(configPath, 'utf8'));
   } catch (e) {
@@ -14,7 +14,11 @@ function readConfig(fs, configPath) {
   }
 }
 
-function resolveValue(config, key) {
+export function writeConfig(fs, configPath, data) {
+  fs.writeFileSync(configPath, JSON.stringify(data, null, '  '));
+}
+
+export function resolveValue(config, key) {
   const currentEnv = config.env;
   if (_.isEmpty(currentEnv)) {
     throw new Error('Invalid env for cli');
@@ -26,4 +30,3 @@ function resolveValue(config, key) {
   return config[currentEnv][key];
 }
 
-module.exports = { readConfig, resolveValue };

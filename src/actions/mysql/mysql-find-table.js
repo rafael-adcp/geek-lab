@@ -1,4 +1,4 @@
-module.exports = ({ mysql }) => ({
+export default ({ mysql }) => ({
   command: 'mysql-find-table',
   describe: 'describe a mysql table',
   builder: (yargs) => yargs
