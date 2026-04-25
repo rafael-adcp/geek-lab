@@ -67,12 +67,13 @@ const customActionsPath = () => {
 
 const readMetrics = () => metrics.readMetrics(fs, metricsPath);
 
-const recordMetrics = (command) => {
-  if (!readConfig().collectMetrics) return;
-  const normalized = isEmpty(command) ? 'geek-lab' : command;
-  const updated = metrics.recordUsage({ store: readMetrics(), clock, command: normalized });
-  metrics.writeMetrics(fs, metricsPath, updated);
-};
+const recordMetrics = (command) => metrics.recordCommand({
+  fs,
+  metricsPath,
+  clock,
+  command,
+  enabled: readConfig().collectMetrics,
+});
 
 const deps = {
   config: {

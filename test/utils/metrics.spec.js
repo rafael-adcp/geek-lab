@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readMetrics, writeMetrics, recordUsage } from '../../src/utils/metrics/index.js';
+import { readMetrics, writeMetrics, recordUsage, recordCommand } from '../../src/utils/metrics/index.js';
 
 describe('#utils/metrics/readMetrics', () => {
   it('parses the metrics file at the given path', () => {
@@ -48,5 +48,52 @@ describe('#utils/metrics/recordUsage', () => {
     recordUsage({ store, clock, command: 'foo' });
 
     assert.deepStrictEqual(store, { totalUsage: { foo: 2 }, dailyUsage: {} });
+  });
+});
+
+describe('#utils/metrics/recordCommand', () => {
+  function fakeFs(initial) {
+    let store = JSON.stringify(initial);
+    return {
+      writes: [],
+      readFileSync: () => store,
+      writeFileSync(p, c) { this.writes.push([p, c]); store = c; },
+    };
+  }
+  const clock = { now: () => new Date('2026-04-25T12:00:00Z') };
+
+  it('skips reads and writes when enabled is false', () => {
+    const fs = { readFileSync: () => { throw new Error('should not read'); }, writeFileSync: () => { throw new Error('should not write'); } };
+
+    recordCommand({ fs, metricsPath: '/m.json', clock, command: 'foo', enabled: false });
+  });
+
+  it('persists an incremented store when enabled', () => {
+    const fs = fakeFs({ totalUsage: { foo: 2 }, dailyUsage: {} });
+
+    recordCommand({ fs, metricsPath: '/m.json', clock, command: 'foo', enabled: true });
+
+    assert.strictEqual(fs.writes.length, 1);
+    const written = JSON.parse(fs.writes[0][1]);
+    assert.strictEqual(written.totalUsage.foo, 3);
+    assert.strictEqual(written.dailyUsage['25/04/2026'].foo, 1);
+  });
+
+  it('records empty commands as the literal "geek-lab"', () => {
+    const fs = fakeFs({ totalUsage: {}, dailyUsage: {} });
+
+    recordCommand({ fs, metricsPath: '/m.json', clock, command: '', enabled: true });
+
+    const written = JSON.parse(fs.writes[0][1]);
+    assert.strictEqual(written.totalUsage['geek-lab'], 1);
+  });
+
+  it('records nullish commands as "geek-lab" too', () => {
+    const fs = fakeFs({ totalUsage: {}, dailyUsage: {} });
+
+    recordCommand({ fs, metricsPath: '/m.json', clock, command: undefined, enabled: true });
+
+    const written = JSON.parse(fs.writes[0][1]);
+    assert.strictEqual(written.totalUsage['geek-lab'], 1);
   });
 });
