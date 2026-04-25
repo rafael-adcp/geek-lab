@@ -84,6 +84,8 @@ const deps = {
   paths: {
     userDirectory: () => paths.userDirectory(os),
     defaultActions: () => paths.defaultActionsPath(),
+  },
+  actions: {
     list: (dirs) => actionsUtil.listFiles({ fs, pathLib: path, dirs }),
   },
   metrics: {

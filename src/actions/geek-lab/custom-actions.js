@@ -1,10 +1,10 @@
-export default ({ config, paths }) => ({
+export default ({ config, actions }) => ({
   command: 'custom-actions',
   describe: 'show current custom-actions for cli',
   builder: (yargs) => yargs.example('$0 custom-actions'),
   handler: () => {
     const msg = `Custom actions are located at:` +
-      `\n\n${paths.list(config.read().customActionsPath).join('\n')}`;
+      `\n\n${actions.list(config.read().customActionsPath).join('\n')}`;
 
     console.log(msg);
     return msg;
