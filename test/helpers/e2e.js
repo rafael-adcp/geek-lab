@@ -1,9 +1,11 @@
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
-const http = require('http');
+import { spawn } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
+import http from 'http';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN_PATH = path.resolve(__dirname, '../../bin/geek-lab.js');
 
 const DEFAULT_CONFIG = {
@@ -27,7 +29,7 @@ const DEFAULT_CONFIG = {
 
 const DEFAULT_METRICS = { totalUsage: {}, dailyUsage: {} };
 
-function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
+export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'glab-e2e-'));
   const geekDir = path.join(home, 'geek-lab_local');
   fs.mkdirSync(geekDir);
@@ -90,7 +92,7 @@ function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
   };
 }
 
-function startHttpServer(handler) {
+export function startHttpServer(handler) {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const chunks = [];
@@ -114,5 +116,3 @@ function startHttpServer(handler) {
     });
   });
 }
-
-module.exports = { createCliEnv, startHttpServer };

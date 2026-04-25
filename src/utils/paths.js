@@ -1,15 +1,16 @@
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-function userDirectory(os) {
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export function userDirectory(os) {
   return path.join(os.homedir(), 'geek-lab_local');
 }
 
-function internalFile(os, fileName) {
+export function internalFile(os, fileName) {
   return path.join(userDirectory(os), fileName);
 }
 
-function defaultActionsPath() {
+export function defaultActionsPath() {
   return path.join(__dirname, '../actions');
 }
-
-module.exports = { userDirectory, internalFile, defaultActionsPath };

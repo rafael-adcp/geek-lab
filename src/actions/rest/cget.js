@@ -1,4 +1,4 @@
-module.exports = ({ http }) => ({
+export default ({ http }) => ({
   command: 'cget',
   describe: 'performs a GET request',
   builder: (yargs) => yargs

@@ -1,6 +1,6 @@
-const assert = require('node:assert/strict');
-const fs = require('fs');
-const { createCliEnv } = require('../helpers/e2e');
+import assert from 'node:assert/strict';
+import fs from 'fs';
+import { createCliEnv } from '../helpers/e2e.js';
 
 describe('#e2e/config', () => {
   let env;

@@ -1,6 +1,6 @@
-const _ = require('lodash');
+import _ from 'lodash';
 
-function listFiles({ fs, pathLib, dirs }) {
+export function listFiles({ fs, pathLib, dirs }) {
   let files = [];
   for (const dir of dirs) {
     const entries = fs.readdirSync(dir, { recursive: true, withFileTypes: true });
@@ -12,14 +12,15 @@ function listFiles({ fs, pathLib, dirs }) {
   return files;
 }
 
-function discoverActions({ fs, pathLib, loader, dirs, deps }) {
+export async function discoverActions({ fs, pathLib, loader, dirs, deps }) {
   const files = listFiles({ fs, pathLib, dirs });
   const seen = [];
   const actions = [];
 
   for (const file of files) {
-    const loaded = loader(file);
-    const action = typeof loaded === 'function' ? loaded(deps) : loaded;
+    const loaded = await loader(file);
+    const mod = loaded.default;
+    const action = typeof mod === 'function' ? mod(deps) : mod;
     actions.push(action);
     const dup = _.find(seen, (o) => _.isEqual(o.command, action.command));
 
@@ -38,4 +39,3 @@ function discoverActions({ fs, pathLib, loader, dirs, deps }) {
   return actions;
 }
 
-module.exports = { listFiles, discoverActions };

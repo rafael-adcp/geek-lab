@@ -1,4 +1,4 @@
-module.exports = ({ paths }) => ({
+export default ({ paths }) => ({
   command: 'default-actions',
   describe: 'show current default-actions for cli',
   builder: (yargs) => yargs.example('$0 default-actions'),

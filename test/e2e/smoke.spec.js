@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { createCliEnv } = require('../helpers/e2e');
+import assert from 'node:assert/strict';
+import { createCliEnv } from '../helpers/e2e.js';
 
 describe('#e2e/smoke', () => {
   let env;

@@ -1,30 +1,34 @@
 #!/usr/bin/env node
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
-const axios = require('axios');
-const mysql2 = require('mysql2/promise');
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
+import { fileURLToPath, pathToFileURL } from 'url';
 
-const toString = require('lodash/toString');
-const isEmpty = require('lodash/isEmpty');
-const find = require('lodash/find');
-const union = require('lodash/union');
+import axios from 'axios';
+import mysql2 from 'mysql2/promise';
 
-const yargs = require('yargs');
+import toString from 'lodash/toString.js';
+import isEmpty from 'lodash/isEmpty.js';
+import find from 'lodash/find.js';
+import union from 'lodash/union.js';
 
-const paths = require('../src/utils/paths');
-const clock = require('../src/utils/clock');
-const config = require('../src/utils/config');
-const metrics = require('../src/utils/metrics');
-const httpUtil = require('../src/utils/http');
-const mysqlUtil = require('../src/utils/mysql');
-const actionsUtil = require('../src/utils/actions');
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
-const pkg = require(path.join(__dirname, '../package.json'));
+import * as paths from '../src/utils/paths.js';
+import * as clock from '../src/utils/clock.js';
+import * as config from '../src/utils/config/index.js';
+import * as metrics from '../src/utils/metrics/index.js';
+import * as httpUtil from '../src/utils/http/index.js';
+import * as mysqlUtil from '../src/utils/mysql/index.js';
+import * as actionsUtil from '../src/utils/actions/index.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
 
 // update-notifier is ESM-only since v6; fire-and-forget via dynamic import
-// so the rest of the CLI stays CJS and boots synchronously.
-/* istanbul ignore next: advisory side-effect, not a code path under test */
+// so we never block the CLI even if the network check is slow.
+/* c8 ignore next 4 */
 import('update-notifier')
   .then(({ default: updateNotifier }) => updateNotifier({ pkg, updateCheckInterval: 1000 }).notify())
   .catch(() => { /* advisory check — never block the CLI */ });
@@ -34,7 +38,7 @@ const metricsPath = paths.internalFile(os, 'metrics_geek-lab.json');
 
 const readConfig = () => config.readConfig(fs, configPath);
 const resolveConfigValue = (key) => config.resolveValue(readConfig(), key);
-const writeConfig = (data) => fs.writeFileSync(configPath, JSON.stringify(data, null, '  '));
+const writeConfig = (data) => config.writeConfig(fs, configPath, data);
 
 const httpClient = httpUtil.createHttpClient({
   axios,
@@ -45,12 +49,15 @@ const httpClient = httpUtil.createHttpClient({
 
 const mysqlClient = mysqlUtil.createMysqlClient({
   mysql2,
-  getCreds: /* istanbul ignore next: only fires when an action calls deps.mysql.query against
-     a real DB; mysql actions are unit-tested with an injected mysql.query stub. */ () => ({
+  /* c8 ignore start */
+  // only fires when an action calls deps.mysql.query against a real DB;
+  // mysql actions are unit-tested with an injected mysql.query stub.
+  getCreds: () => ({
     host: resolveConfigValue('mysqlHost'),
     user: resolveConfigValue('mysqlUser'),
     password: resolveConfigValue('mysqlPassword'),
   }),
+  /* c8 ignore stop */
 });
 
 const customActionsPath = () => {
@@ -58,13 +65,13 @@ const customActionsPath = () => {
   return isEmpty(configured) ? [] : configured;
 };
 
-const readMetrics = () => JSON.parse(fs.readFileSync(metricsPath, 'utf8'));
+const readMetrics = () => metrics.readMetrics(fs, metricsPath);
 
 const recordMetrics = (command) => {
   if (!readConfig().collectMetrics) return;
   const normalized = isEmpty(command) ? 'geek-lab' : command;
   const updated = metrics.recordUsage({ store: readMetrics(), clock, command: normalized });
-  fs.writeFileSync(metricsPath, JSON.stringify(updated, null, '  '));
+  metrics.writeMetrics(fs, metricsPath, updated);
 };
 
 const deps = {
@@ -85,13 +92,17 @@ const deps = {
   mysql: { query: mysqlClient.query },
 };
 
-const actions = actionsUtil.discoverActions({
+const actions = await actionsUtil.discoverActions({
   fs,
   pathLib: path,
-  loader: require,
+  loader: (file) => import(pathToFileURL(file).href),
   dirs: union([paths.defaultActionsPath()], customActionsPath()),
   deps,
 });
+
+const cli = yargs(hideBin(process.argv))
+  .scriptName('geek-lab')
+  .version(pkg.version);
 
 for (const action of actions) {
   /*
@@ -99,8 +110,7 @@ for (const action of actions) {
     .commandDir(rootPath, { recurse: true }) because we need to know all the commands to prevent
     command colisions
   */
-  yargs
-    .command(action);
+  cli.command(action);
 }
 
 const provided = toString(
@@ -117,17 +127,17 @@ if (
   !commandExists //if command donot exist
 ) {
   console.log(`Invalid command provided "${provided}", see available options below`);
-  yargs.showHelp();
+  cli.showHelp();
 } else {
   //preventing invalid actions to be stored on metrics
   recordMetrics(provided);
 }
 
-yargs
+await cli
   //apending a message at the botton of help command
   .epilogue('for more information, check project repo https://github.com/rafael-adcp/geek-lab')
   //this will force "cli" to show help when nothing is provided
   .demandCommand(1, '')
   //pretty printing things following to terminal width
-  .wrap(yargs.terminalWidth())
-  .argv;
+  .wrap(cli.terminalWidth())
+  .parse();

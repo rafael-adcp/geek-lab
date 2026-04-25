@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const { createHttpClient } = require('../../src/utils/http');
+import assert from 'node:assert/strict';
+import { createHttpClient } from '../../src/utils/http/index.js';
 
 const noopAxios = { request: () => Promise.resolve({ data: null }) };
 const noopFs = { readFileSync: () => 'file contents' };

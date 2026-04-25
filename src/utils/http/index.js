@@ -1,8 +1,8 @@
-const _ = require('lodash');
+import _ from 'lodash';
 
 const ALLOWED_METHODS = ['POST', 'GET', 'DELETE', 'PUT'];
 
-function createHttpClient({ axios, fs, getToken, getBaseUrl }) {
+export function createHttpClient({ axios, fs, getToken, getBaseUrl }) {
   async function request(params) {
     if (_.isEmpty(params)) {
       throw new Error('No params were provided');
@@ -49,4 +49,3 @@ function createHttpClient({ axios, fs, getToken, getBaseUrl }) {
   return { request };
 }
 
-module.exports = { createHttpClient };

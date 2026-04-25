@@ -1,10 +1,16 @@
-const execSync = require('child_process').execSync;
-const assert = require('node:assert/strict');
+import { execSync } from 'child_process';
+import assert from 'node:assert/strict';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * command to execute cli via node so that tests can be executed via GitHub Actions
  */
-const execBin = `node "${require('path').resolve(__dirname, '../../bin/geek-lab')}"`;
+const execBin = `node "${path.resolve(__dirname, '../../bin/geek-lab.js')}"`;
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8'));
 
 describe('#bin', () => {
   it('should show help if nothing is provided', (done) => {
@@ -38,7 +44,7 @@ describe('#bin', () => {
     assert.ok(!(res).includes('--help'));
     assert.ok(!(res).includes('invalid command'));
     assert.ok(!(res).includes('see available'));
-    assert.ok((res).includes(require('../../package.json').version));
+    assert.ok((res).includes(pkg.version));
   });
 
   it('should show invalid command phrase + help when invalid command is provided', () => {

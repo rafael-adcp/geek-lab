@@ -1,4 +1,4 @@
-module.exports = ({ config }) => ({
+export default ({ config }) => ({
   command: 'change-env',
   describe: 'swap cli between environments',
   builder: (yargs) => yargs

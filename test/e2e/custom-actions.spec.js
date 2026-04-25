@@ -1,7 +1,7 @@
-const assert = require('node:assert/strict');
-const path = require('path');
-const fs = require('fs');
-const { createCliEnv } = require('../helpers/e2e');
+import assert from 'node:assert/strict';
+import path from 'path';
+import fs from 'fs';
+import { createCliEnv } from '../helpers/e2e.js';
 
 describe('#e2e/custom-actions', () => {
   let env;
