@@ -7,9 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import axios from 'axios';
 import mysql2 from 'mysql2/promise';
 
-import toString from 'lodash/toString.js';
 import isEmpty from 'lodash/isEmpty.js';
-import find from 'lodash/find.js';
 import union from 'lodash/union.js';
 
 import yargs from 'yargs';
@@ -105,42 +103,18 @@ const actions = await actionsUtil.discoverActions({
 
 const cli = yargs(hideBin(process.argv))
   .scriptName('geek-lab')
-  .version(pkg.version);
+  .version(pkg.version)
+  .strictCommands()
+  .recommendCommands();
 
 for (const action of actions) {
-  /*
-    we cant use
-    .commandDir(rootPath, { recurse: true }) because we need to know all the commands to prevent
-    command colisions
-  */
   cli.command(action);
 }
 
-const provided = toString(
-  Array.prototype.slice.call(process.argv, 2)[0]
-);
-
-const commandExists = find(actions, (o) => { return o.command === provided; });
-
-//showing cli tool help when an invalid command is provided
-if (
-  !isEmpty(provided) &&
-  provided !== '--help' && //yargs default param to show help
-  provided !== '--version' && //yargs default param to show version
-  !commandExists //if command donot exist
-) {
-  console.log(`Invalid command provided "${provided}", see available options below`);
-  cli.showHelp();
-} else {
-  //preventing invalid actions to be stored on metrics
-  recordMetrics(provided);
-}
-
-await cli
-  //apending a message at the botton of help command
+const argv = await cli
   .epilogue('for more information, check project repo https://github.com/rafael-adcp/geek-lab')
-  //this will force "cli" to show help when nothing is provided
   .demandCommand(1, '')
-  //pretty printing things following to terminal width
   .wrap(cli.terminalWidth())
   .parse();
+
+recordMetrics(String(argv._[0]));

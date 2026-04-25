@@ -47,17 +47,15 @@ describe('#bin', () => {
     assert.ok((res).includes(pkg.version));
   });
 
-  it('should show invalid command phrase + help when invalid command is provided', () => {
+  it('should exit non-zero and recommend the closest match for an unknown command', () => {
     try {
-      execSync(`${execBin} batmanrobin`);
+      execSync(`${execBin} cgte`);
+      throw new Error('expected non-zero exit');
     }
     catch (res) {
-      assert.ok((res.toString()).includes('Invalid command provided'));
-      assert.ok((res.toString()).includes('see available options below'));
-      assert.ok((res.toString()).includes('[command]'));
-      assert.ok((res.toString()).includes('--help'));
-      assert.ok((res.toString()).includes('--version'));
-
+      const out = res.toString() + (res.stderr ? res.stderr.toString() : '');
+      assert.ok(out.includes('Did you mean cget'), `expected recommendation for "cget", got:\n${out}`);
+      assert.ok(out.includes('<command>'), `expected help block, got:\n${out}`);
     }
   });
 });

@@ -1,4 +1,4 @@
-import createMysqlAction from './create-mysql-action.js';
+import createMysqlAction from '../../utils/mysql/create-action.js';
 
 export default createMysqlAction({
   command: 'mysql-describe-table',
