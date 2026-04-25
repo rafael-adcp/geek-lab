@@ -20,6 +20,17 @@ describe('#e2e/custom-actions', () => {
     assert.ok(stdout.includes('Custom actions are located at:'));
   });
 
+  it('boots without crashing when customActionsPath is missing from config', async () => {
+    env = createCliEnv();
+    const cfg = env.readConfig();
+    delete cfg.customActionsPath;
+    env.writeConfig(cfg);
+
+    const { status } = await env.run(['default-actions']);
+
+    assert.strictEqual(status, 0);
+  });
+
   it('exits non-zero with a duplicate-command error when a custom action collides with a built-in command', async () => {
     env = createCliEnv();
 

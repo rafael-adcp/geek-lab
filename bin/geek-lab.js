@@ -7,9 +7,6 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import axios from 'axios';
 import mysql2 from 'mysql2/promise';
 
-import isEmpty from 'lodash/isEmpty.js';
-import union from 'lodash/union.js';
-
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -58,11 +55,6 @@ const mysqlClient = mysqlUtil.createMysqlClient({
   /* c8 ignore stop */
 });
 
-const customActionsPath = () => {
-  const configured = readConfig().customActionsPath;
-  return isEmpty(configured) ? [] : configured;
-};
-
 const readMetrics = () => metrics.readMetrics(fs, metricsPath);
 
 const recordMetrics = (command) => metrics.recordCommand({
@@ -97,7 +89,7 @@ const actions = await actionsUtil.discoverActions({
   fs,
   pathLib: path,
   loader: (file) => import(pathToFileURL(file).href),
-  dirs: union([paths.defaultActionsPath()], customActionsPath()),
+  dirs: [paths.defaultActionsPath(), ...(readConfig().customActionsPath ?? [])],
   deps,
 });
 
