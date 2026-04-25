@@ -9,7 +9,7 @@ import isEqual from 'lodash/isEqual.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default ({ metrics }) => ({
+export default ({ metrics, paths }) => ({
   command: 'metrics',
   describe: 'show current metrics for cli',
   builder: (yargs) => yargs
@@ -115,7 +115,7 @@ export default ({ metrics }) => ({
 
       const parsedString = template(handlebarData);
 
-      const reportDestination = path.resolve(__dirname, `../../handlebars/awesome_metrics_graph_${uuidv1()}.html`);
+      const reportDestination = path.join(paths.userDirectory(), `awesome_metrics_graph_${uuidv1()}.html`);
       msg = `Html report generated and located at ${reportDestination}`;
       fs.writeFileSync(reportDestination, parsedString);
     } else {

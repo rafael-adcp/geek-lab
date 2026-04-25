@@ -1,24 +1,13 @@
 import assert from 'node:assert/strict';
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { createCliEnv } from '../helpers/e2e.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const HANDLEBARS_DIR = path.resolve(__dirname, '../../src/handlebars');
 
 describe('#e2e/metrics', () => {
   let env;
-  const generatedReports = [];
 
   afterEach(() => {
     env?.cleanup();
     env = null;
-    while (generatedReports.length) {
-      const file = generatedReports.pop();
-      try { fs.unlinkSync(file); } catch { /* already gone */ }
-    }
   });
 
   it('prints the metrics file contents as formatted JSON', async () => {
@@ -52,7 +41,7 @@ describe('#e2e/metrics', () => {
     assert.deepStrictEqual(after.dailyUsage, {});
   });
 
-  it('generates an HTML report under src/handlebars when --pretty is passed', async () => {
+  it('generates an HTML report under the user directory when --pretty is passed', async () => {
     env = createCliEnv({
       metrics: {
         totalUsage: { 'geek-lab': 1, batman: 2, robin: 3 },
@@ -70,9 +59,10 @@ describe('#e2e/metrics', () => {
     assert.ok(match, `expected report path in stdout, got:\n${stdout}`);
 
     const reportPath = match[1].trim();
-    generatedReports.push(reportPath);
-
-    assert.ok(reportPath.startsWith(HANDLEBARS_DIR));
+    assert.ok(
+      reportPath.startsWith(env.geekDir),
+      `expected report under user dir (${env.geekDir}), got: ${reportPath}`
+    );
     const reportContent = fs.readFileSync(reportPath, 'utf8');
     assert.ok(reportContent.includes('batman'));
     assert.ok(reportContent.includes('robin'));
