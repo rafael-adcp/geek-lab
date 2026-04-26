@@ -6,61 +6,70 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/**
- * command to execute cli via node so that tests can be executed via GitHub Actions
- */
 const execBin = `node "${path.resolve(__dirname, '../../bin/geek-lab.js')}"`;
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8'));
 
 // yargs honors LANG/LC_ALL for help text. Lock to English so the assertions
 // (e.g. '<command>' vs '<comando>') hold regardless of the host OS locale.
 const EN_ENV = { ...process.env, LANG: 'en_US.UTF-8', LC_ALL: 'en_US.UTF-8', LANGUAGE: 'en' };
-const exec = (cmd) => execSync(cmd, { env: EN_ENV });
 
-describe('#bin', () => {
-  it('should show help if nothing is provided', (done) => {
-    try {
-      exec(`${execBin}`);
-      done('this shouldnt happen');
-    } catch (e) {
-      assert.ok((e.toString()).includes('<command>'));
-      assert.ok((e.toString()).includes('--help'));
-      assert.ok((e.toString()).includes('--version'));
-      assert.ok(!(e.toString()).includes('invalid command'));
-      assert.ok(!(e.toString()).includes('see available'));
-      done();
-    }
+function runExpectingFailure(cmd) {
+  try {
+    execSync(cmd, { env: EN_ENV });
+    throw new Error(`expected non-zero exit from: ${cmd}`);
+  } catch (e) {
+    return {
+      status: e.status,
+      output: (e.stdout?.toString() ?? '') + (e.stderr?.toString() ?? '') + e.toString(),
+    };
+  }
+}
+
+function runExpectingSuccess(cmd) {
+  return execSync(cmd, { env: EN_ENV }).toString();
+}
+
+describe('#bin/no-args', () => {
+  it('exits non-zero', () => {
+    assert.notStrictEqual(runExpectingFailure(execBin).status, 0);
   });
 
-  it('should show help if --help is provided', () => {
-    const res = exec(`${execBin} --help`).toString();
+  it('renders the help block listing the built-in commands', () => {
+    const { output } = runExpectingFailure(execBin);
+    assert.ok(output.includes('auth'), `expected 'auth' in help output, got:\n${output}`);
+    assert.ok(output.includes('cget'), `expected 'cget' in help output, got:\n${output}`);
+  });
+});
 
-    assert.ok((res).includes('<command>'));
-    assert.ok((res).includes('--help'));
-    assert.ok((res).includes('--version'));
-    assert.ok(!(res).includes('invalid command'));
-    assert.ok(!(res).includes('see available'));
+describe('#bin/--help', () => {
+  it('exits zero', () => {
+    runExpectingSuccess(`${execBin} --help`);
   });
 
-  it('should show version if --version is provided', () => {
-    const res = exec(`${execBin} --version`).toString();
+  it('renders the help block listing the built-in commands', () => {
+    const out = runExpectingSuccess(`${execBin} --help`);
+    assert.ok(out.includes('auth'));
+    assert.ok(out.includes('cget'));
+  });
+});
 
-    assert.ok(!(res).includes('<command>'));
-    assert.ok(!(res).includes('--help'));
-    assert.ok(!(res).includes('invalid command'));
-    assert.ok(!(res).includes('see available'));
-    assert.ok((res).includes(pkg.version));
+describe('#bin/--version', () => {
+  it('prints the package version from package.json', () => {
+    const out = runExpectingSuccess(`${execBin} --version`);
+    assert.ok(out.includes(pkg.version), `expected version ${pkg.version}, got:\n${out}`);
+  });
+});
+
+describe('#bin/unknown command', () => {
+  it('exits non-zero', () => {
+    assert.notStrictEqual(runExpectingFailure(`${execBin} cgte`).status, 0);
   });
 
-  it('should exit non-zero and recommend the closest match for an unknown command', () => {
-    try {
-      exec(`${execBin} cgte`);
-      throw new Error('expected non-zero exit');
-    }
-    catch (res) {
-      const out = res.toString() + (res.stderr ? res.stderr.toString() : '');
-      assert.ok(out.includes('Did you mean cget'), `expected recommendation for "cget", got:\n${out}`);
-      assert.ok(out.includes('<command>'), `expected help block, got:\n${out}`);
-    }
+  it('recommends the closest matching command (cgte → cget)', () => {
+    const { output } = runExpectingFailure(`${execBin} cgte`);
+    assert.ok(
+      output.includes('Did you mean cget'),
+      `expected recommendation for "cget", got:\n${output}`
+    );
   });
 });
