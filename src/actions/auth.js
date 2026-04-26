@@ -17,15 +17,15 @@ export default ({ http, config, clock }) => ({
           data: JSON.parse(config.resolveValue('apiAuthenticationJson')),
         });
       } catch (e) {
-        console.log(e.toString());
-        throw new Error('Failed to execute api call', { cause: e });
+        throw new Error(`Failed to execute api call: ${e.message}`, { cause: e });
       }
 
       const tokenField = config.resolveValue('apiTokenResponseField');
       const parsed = parseAuthResponse(apiResponse, tokenField);
       if (!parsed.ok) {
-        console.log(apiResponse);
-        throw new Error('Something wrong happend on authentication');
+        throw new Error(
+          `Something wrong happend on authentication. Got payload: ${JSON.stringify(apiResponse)}`
+        );
       }
 
       appConfig.token = parsed.token;
