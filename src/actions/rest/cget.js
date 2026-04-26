@@ -1,19 +1,8 @@
-export default ({ http }) => ({
+import createRestAction from '../../utils/http/create-action.js';
+
+export default createRestAction({
   command: 'cget',
+  method: 'GET',
   describe: 'performs a GET request',
-  builder: (yargs) => yargs
-    .option('endpoint', { describe: 'endpoint to make a get request', demanOption: true, type: 'string' })
-    .demandOption('endpoint', 'Please provide parameter --endpoint')
-    .example('$0 cget --endpoint blah')
-    .example('$0 cget blah'),
-  handler: async (argv) => {
-    console.log(
-      JSON.stringify(
-        await http.request({
-          method: 'GET',
-          endpoint: argv.endpoint,
-        })
-        , null, 2)
-    );
-  },
+  hasBody: false,
 });

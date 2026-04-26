@@ -1,121 +1,200 @@
 import assert from 'node:assert/strict';
-import { createCliEnv, startHttpServer } from '../helpers/e2e.js';
+import { createCliEnv, withHttpServer } from '../helpers/e2e.js';
 
-describe('#e2e/rest', () => {
+describe('#e2e/rest — cget', () => {
   let env;
-  let server;
+  let captured;
+  let runResult;
 
-  afterEach(async () => {
-    env?.cleanup();
-    env = null;
-    if (server) {
-      await server.close();
-      server = null;
-    }
+  before(async () => {
+    const r = await withHttpServer({
+      handler: (req, res) => {
+        captured = { method: req.method, url: req.url, auth: req.headers.authorization };
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ ok: true, who: 'cget' }));
+      },
+      config: { token: 'tok-abc' },
+    });
+    env = r.env;
+    runResult = await env.run(['cget', '--endpoint', 'things']);
   });
 
-  function setup(handler, configOverrides = {}) {
-    return startHttpServer(handler).then((s) => {
-      server = s;
-      env = createCliEnv({
-        config: {
-          env: 'dev',
-          token: 'tok-abc',
-          dev: { apiUrl: server.url, ...configOverrides },
-        },
-      });
-      return server;
-    });
-  }
+  after(async () => { await env.cleanup(); });
 
-  it('cget hits the configured endpoint with the cached token and prints the response body', async () => {
-    let captured;
-    await setup((req, res) => {
-      captured = { method: req.method, url: req.url, auth: req.headers.authorization };
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ ok: true, who: 'cget' }));
-    });
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
 
-    const { stdout, status } = await env.run(['cget', '--endpoint', 'things']);
-
-    assert.strictEqual(status, 0);
+  it('issues a GET against the normalized endpoint with the cached token', () => {
     assert.deepStrictEqual(captured, { method: 'GET', url: '/things', auth: 'tok-abc' });
-    assert.deepStrictEqual(JSON.parse(stdout), { ok: true, who: 'cget' });
   });
 
-  it('cpost sends the --json payload as the request body', async () => {
-    let captured;
-    await setup((req, res, body) => {
-      captured = { method: req.method, url: req.url, body, contentType: req.headers['content-type'] };
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ created: 42 }));
+  it('prints the response body as JSON on stdout', () => {
+    assert.deepStrictEqual(JSON.parse(runResult.stdout), { ok: true, who: 'cget' });
+  });
+});
+
+describe('#e2e/rest — cpost', () => {
+  let env;
+  let captured;
+  let runResult;
+  const payload = JSON.stringify({ name: 'thing', count: 3 });
+
+  before(async () => {
+    const r = await withHttpServer({
+      handler: (req, res, body) => {
+        captured = { method: req.method, url: req.url, body, contentType: req.headers['content-type'] };
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ created: 42 }));
+      },
+      config: { token: 'tok-abc' },
     });
+    env = r.env;
+    runResult = await env.run(['cpost', '--endpoint', '/things', '--json', payload]);
+  });
 
-    const payload = JSON.stringify({ name: 'thing', count: 3 });
-    const { stdout, status } = await env.run(['cpost', '--endpoint', '/things', '--json', payload]);
+  after(async () => { await env.cleanup(); });
 
-    assert.strictEqual(status, 0);
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
+
+  it('uses POST', () => {
     assert.strictEqual(captured.method, 'POST');
-    assert.strictEqual(captured.url, '/things');
-    assert.strictEqual(captured.body, payload);
-    assert.strictEqual(captured.contentType, 'application/json');
-    assert.deepStrictEqual(JSON.parse(stdout), { created: 42 });
   });
 
-  it('cput sends the --json payload as the request body', async () => {
-    let captured;
-    await setup((req, res, body) => {
-      captured = { method: req.method, url: req.url, body };
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ updated: true }));
+  it('hits the requested endpoint', () => {
+    assert.strictEqual(captured.url, '/things');
+  });
+
+  it('sends the --json payload verbatim as the request body', () => {
+    assert.strictEqual(captured.body, payload);
+  });
+
+  it('sets Content-Type: application/json', () => {
+    assert.strictEqual(captured.contentType, 'application/json');
+  });
+
+  it('prints the response body as JSON on stdout', () => {
+    assert.deepStrictEqual(JSON.parse(runResult.stdout), { created: 42 });
+  });
+});
+
+describe('#e2e/rest — cput', () => {
+  let env;
+  let captured;
+  let runResult;
+  const payload = JSON.stringify({ count: 9 });
+
+  before(async () => {
+    const r = await withHttpServer({
+      handler: (req, res, body) => {
+        captured = { method: req.method, url: req.url, body };
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ updated: true }));
+      },
+      config: { token: 'tok-abc' },
     });
+    env = r.env;
+    runResult = await env.run(['cput', '--endpoint', '/things/1', '--json', payload]);
+  });
 
-    const payload = JSON.stringify({ count: 9 });
-    const { stdout, status } = await env.run(['cput', '--endpoint', '/things/1', '--json', payload]);
+  after(async () => { await env.cleanup(); });
 
-    assert.strictEqual(status, 0);
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
+
+  it('uses PUT against the requested endpoint', () => {
     assert.strictEqual(captured.method, 'PUT');
     assert.strictEqual(captured.url, '/things/1');
+  });
+
+  it('sends the --json payload verbatim as the request body', () => {
     assert.strictEqual(captured.body, payload);
-    assert.deepStrictEqual(JSON.parse(stdout), { updated: true });
   });
 
-  it('cdelete issues a DELETE against the configured endpoint', async () => {
-    let captured;
-    await setup((req, res) => {
-      captured = { method: req.method, url: req.url };
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ deleted: true }));
+  it('prints the response body as JSON on stdout', () => {
+    assert.deepStrictEqual(JSON.parse(runResult.stdout), { updated: true });
+  });
+});
+
+describe('#e2e/rest — cdelete', () => {
+  let env;
+  let captured;
+  let runResult;
+
+  before(async () => {
+    const r = await withHttpServer({
+      handler: (req, res) => {
+        captured = { method: req.method, url: req.url };
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ deleted: true }));
+      },
+      config: { token: 'tok-abc' },
     });
+    env = r.env;
+    runResult = await env.run(['cdelete', '--endpoint', '/things/1']);
+  });
 
-    const { stdout, status } = await env.run(['cdelete', '--endpoint', '/things/1']);
+  after(async () => { await env.cleanup(); });
 
-    assert.strictEqual(status, 0);
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
+
+  it('issues a DELETE against the requested endpoint', () => {
     assert.deepStrictEqual(captured, { method: 'DELETE', url: '/things/1' });
-    assert.deepStrictEqual(JSON.parse(stdout), { deleted: true });
   });
 
-  it('exits non-zero and surfaces the upstream error when the API responds with 5xx', async () => {
-    await setup((req, res) => {
-      res.statusCode = 500;
-      res.end('boom');
+  it('prints the response body as JSON on stdout', () => {
+    assert.deepStrictEqual(JSON.parse(runResult.stdout), { deleted: true });
+  });
+});
+
+describe('#e2e/rest — upstream 5xx', () => {
+  let env;
+  let runResult;
+
+  before(async () => {
+    const r = await withHttpServer({
+      handler: (req, res) => { res.statusCode = 500; res.end('boom'); },
+      config: { token: 'tok-abc' },
     });
+    env = r.env;
+    runResult = await env.run(['cget', '--endpoint', '/broken']);
+  });
 
-    const { status, stdout, stderr } = await env.run(['cget', '--endpoint', '/broken']);
+  after(async () => { await env.cleanup(); });
 
-    assert.notStrictEqual(status, 0);
+  it('exits non-zero', () => {
+    assert.notStrictEqual(runResult.status, 0);
+  });
+
+  it('prints something to the user (does not exit silently)', () => {
     assert.ok(
-      (stdout + stderr).length > 0,
+      (runResult.stdout + runResult.stderr).length > 0,
       'expected the CLI to print something on a 5xx upstream'
     );
   });
+});
 
-  it('fails with a helpful error when --endpoint is omitted', async () => {
+describe('#e2e/rest — missing --endpoint', () => {
+  let env;
+  let runResult;
+
+  before(async () => {
     env = createCliEnv();
+    runResult = await env.run(['cget']);
+  });
 
-    const { status, stderr } = await env.run(['cget']);
+  after(async () => { await env.cleanup(); });
 
-    assert.notStrictEqual(status, 0);
-    assert.ok(stderr.includes('--endpoint'));
+  it('exits non-zero', () => {
+    assert.notStrictEqual(runResult.status, 0);
+  });
+
+  it('mentions the missing flag in stderr', () => {
+    assert.ok(runResult.stderr.includes('--endpoint'));
   });
 });

@@ -44,20 +44,29 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
   fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
   fs.writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
 
-  function run(args = []) {
+  function run(args = [], extraEnv = {}) {
     const argv = Array.isArray(args) ? args : String(args).split(' ').filter(Boolean);
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [BIN_PATH, ...argv], {
-        env: { ...process.env, HOME: home, USERPROFILE: home },
+        cwd: home,
+        env: { ...process.env, HOME: home, USERPROFILE: home, ...extraEnv },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       let stdout = '';
       let stderr = '';
+      let timedOut = false;
       child.stdout.on('data', (c) => { stdout += c.toString('utf8'); });
       child.stderr.on('data', (c) => { stderr += c.toString('utf8'); });
-      const killer = setTimeout(() => child.kill('SIGKILL'), 10000);
+      const killer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, 10000);
       child.on('exit', (status, signal) => {
         clearTimeout(killer);
+        if (timedOut) {
+          reject(new Error(
+            `CLI invocation timed out after 10s: ${argv.join(' ')}\n` +
+            `--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`
+          ));
+          return;
+        }
         resolve({ stdout, stderr, status, signal });
       });
     });
@@ -76,7 +85,9 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
   }
 
   function cleanup() {
-    fs.rmSync(home, { recursive: true, force: true });
+    // maxRetries + retryDelay defend against EBUSY on Windows when the
+    // child process has only just exited and the OS still holds a handle.
+    fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 
   return {
@@ -89,6 +100,51 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
     readMetrics,
     writeConfig,
     cleanup,
+  };
+}
+
+function recordingShim({ rows, fields, logPath }) {
+  return `import fs from 'fs';
+const log = (entry) => fs.appendFileSync(${JSON.stringify(logPath)}, JSON.stringify(entry) + '\\n');
+export default {
+  async createConnection(creds) {
+    log({ event: 'connect', creds });
+    return {
+      async execute(sql) {
+        log({ event: 'execute', sql });
+        return [${JSON.stringify(rows)}, ${JSON.stringify(fields)}];
+      },
+      async destroy() { log({ event: 'destroy' }); },
+    };
+  },
+};
+`;
+}
+
+function rejectingShim({ message }) {
+  return `export default {
+  async createConnection() {
+    return {
+      async execute() { throw new Error(${JSON.stringify(message)}); },
+      async destroy() {},
+    };
+  },
+};
+`;
+}
+
+export function writeMysqlShim(home, opts = {}) {
+  const shimPath = path.join(home, 'mysql2-shim.mjs');
+  const logPath = path.join(home, 'mysql2-shim.log');
+  const source = opts.rejectsWith
+    ? rejectingShim({ message: opts.rejectsWith })
+    : recordingShim({ rows: opts.rows ?? [], fields: opts.fields ?? [], logPath });
+  fs.writeFileSync(shimPath, source);
+  return {
+    shimPath,
+    readLog: () => fs.existsSync(logPath)
+      ? fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+      : [],
   };
 }
 
@@ -115,4 +171,23 @@ export function startHttpServer(handler) {
       });
     });
   });
+}
+
+// Convenience wrapper: spin up an HTTP fixture, build an isolated env wired
+// at the resulting URL, and return both. Closes the server on cleanup.
+export async function withHttpServer({ handler, config = {}, configOverrides = {} }) {
+  const server = await startHttpServer(handler);
+  const env = createCliEnv({
+    config: {
+      env: 'dev',
+      ...config,
+      dev: { apiUrl: server.url, ...configOverrides },
+    },
+  });
+  const originalCleanup = env.cleanup;
+  env.cleanup = async () => {
+    originalCleanup();
+    await server.close();
+  };
+  return { env, server };
 }

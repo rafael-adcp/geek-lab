@@ -20,6 +20,17 @@ describe('#e2e/custom-actions', () => {
     assert.ok(stdout.includes('Custom actions are located at:'));
   });
 
+  it('boots without crashing when customActionsPath is missing from config', async () => {
+    env = createCliEnv();
+    const cfg = env.readConfig();
+    delete cfg.customActionsPath;
+    env.writeConfig(cfg);
+
+    const { status } = await env.run(['default-actions']);
+
+    assert.strictEqual(status, 0);
+  });
+
   it('exits non-zero with a duplicate-command error when a custom action collides with a built-in command', async () => {
     env = createCliEnv();
 
@@ -46,6 +57,44 @@ describe('#e2e/custom-actions', () => {
     assert.ok(
       (stdout + stderr).includes('Duplicate command provided'),
       `expected duplicate-command error message, got:\n${stdout}\n${stderr}`
+    );
+  });
+
+  it('boots and warns when customActionsPath contains non-action files', async () => {
+    env = createCliEnv();
+
+    const customDir = path.join(env.home, 'my-actions');
+    fs.mkdirSync(customDir);
+    fs.writeFileSync(path.join(customDir, 'README.md'), '# not an action');
+    fs.writeFileSync(
+      path.join(customDir, 'broken.js'),
+      `throw new Error('boom at load time');\n`
+    );
+    fs.writeFileSync(
+      path.join(customDir, 'no-shape.js'),
+      `export default { describe: 'missing command' };\n`
+    );
+
+    const cfg = env.readConfig();
+    cfg.customActionsPath = [customDir];
+    env.writeConfig(cfg);
+
+    const { stdout, stderr, status } = await env.run(['default-actions']);
+
+    assert.strictEqual(status, 0);
+    assert.ok(stdout.includes('Default actions are located at:'));
+    const out = stdout + stderr;
+    assert.ok(
+      out.includes('skipping') && out.includes('broken.js'),
+      `expected skip warning for broken.js, got:\n${out}`
+    );
+    assert.ok(
+      out.includes('skipping') && out.includes('no-shape.js'),
+      `expected skip warning for no-shape.js, got:\n${out}`
+    );
+    assert.ok(
+      !out.includes('README.md'),
+      `did not expect a warning for README.md (filtered by extension), got:\n${out}`
     );
   });
 

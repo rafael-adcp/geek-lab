@@ -17,9 +17,7 @@ export default ({ config, paths }) => ({
       config.write(configFileContent);
     } else {
       console.log(`Configuration file can be found at "${paths.userDirectory()}"`);
-      const output = JSON.stringify(configFileContent, null, ' ');
-      console.log(output);
-      return output;
+      console.log(JSON.stringify(configFileContent, null, ' '));
     }
   },
 });

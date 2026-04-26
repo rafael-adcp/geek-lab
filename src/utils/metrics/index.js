@@ -21,3 +21,11 @@ export function recordUsage({ store, clock, command }) {
   return next;
 }
 
+export function recordCommand({ fs, metricsPath, clock, command, enabled }) {
+  if (!enabled) return;
+  const normalized = command && command.length > 0 ? command : 'geek-lab';
+  const store = readMetrics(fs, metricsPath);
+  const next = recordUsage({ store, clock, command: normalized });
+  writeMetrics(fs, metricsPath, next);
+}
+
