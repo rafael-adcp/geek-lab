@@ -10,6 +10,7 @@ export default function createMysqlAction({ command, describe, argName, buildQue
       const query = buildQuery(argv[argName]);
       try {
         const { rows } = await mysql.query(query);
+        // eslint-disable-next-line no-console -- handler output channel, not util-level
         console.log(JSON.stringify(rows, null, 2));
       } catch (e) {
         throw new Error(`Failed to execute query: "${query}" due to ${e.message}`, { cause: e });

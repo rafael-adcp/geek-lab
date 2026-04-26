@@ -20,6 +20,7 @@ export default function createRestAction({ command, method, describe, hasBody })
       const params = { method, endpoint: argv.endpoint };
       if (hasBody) params.data = argv.json;
 
+      // eslint-disable-next-line no-console -- handler output channel, not util-level
       console.log(JSON.stringify(await http.request(params), null, 2));
     };
 
