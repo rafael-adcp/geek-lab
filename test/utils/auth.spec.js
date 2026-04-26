@@ -4,6 +4,7 @@ import {
   parseAuthResponse,
   computeTokenExpires,
   resolveAuthBody,
+  fetchToken,
 } from '../../src/utils/auth/index.js';
 
 describe('#utils/auth/isTokenValid', () => {
@@ -81,6 +82,64 @@ describe('#utils/auth/computeTokenExpires', () => {
     const now = new Date('2026-04-25T12:00:00Z');
     const out = computeTokenExpires({ now, expiresInMinutes: 120 });
     assert.strictEqual(out.toISOString(), '2026-04-25T14:00:00.000Z');
+  });
+});
+
+describe('#utils/auth/fetchToken', () => {
+  function configFor(values) {
+    return { resolveValue: (k) => values[k] };
+  }
+
+  it('POSTs to the auth endpoint with the resolved body and returns the token from the configured field', async () => {
+    const captured = [];
+    const http = {
+      request: async (req) => {
+        captured.push(req);
+        return { response: { status: 'OK', accessToken: 'tok-fresh' } };
+      },
+    };
+    const config = configFor({
+      apiAuthenticationEndpoint: '/auth',
+      apiTokenResponseField: 'accessToken',
+      apiAuthenticationJson: '{"u":"x","p":"y"}',
+    });
+
+    const token = await fetchToken({ http, config });
+
+    assert.strictEqual(token, 'tok-fresh');
+    assert.deepStrictEqual(captured[0], {
+      method: 'POST',
+      endpoint: '/auth',
+      data: { u: 'x', p: 'y' },
+    });
+  });
+
+  it('wraps a transport failure with cause', async () => {
+    const http = { request: async () => { throw new Error('econnrefused'); } };
+    const config = configFor({
+      apiAuthenticationEndpoint: '/auth',
+      apiTokenResponseField: 'token',
+      apiAuthenticationJson: '{}',
+    });
+
+    await assert.rejects(
+      fetchToken({ http, config }),
+      (err) => err.message.includes('Failed to execute api call') && err.message.includes('econnrefused')
+    );
+  });
+
+  it('throws a descriptive error when the response shape is wrong', async () => {
+    const http = { request: async () => ({ response: { status: 'ERROR' } }) };
+    const config = configFor({
+      apiAuthenticationEndpoint: '/auth',
+      apiTokenResponseField: 'token',
+      apiAuthenticationJson: '{}',
+    });
+
+    await assert.rejects(
+      fetchToken({ http, config }),
+      /Something wrong happened on authentication/
+    );
   });
 });
 

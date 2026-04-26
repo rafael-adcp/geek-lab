@@ -28,3 +28,24 @@ export function resolveAuthBody(config) {
     );
   }
 }
+
+export async function fetchToken({ http, config }) {
+  let apiResponse;
+  try {
+    apiResponse = await http.request({
+      method: 'POST',
+      endpoint: config.resolveValue('apiAuthenticationEndpoint'),
+      data: resolveAuthBody(config),
+    });
+  } catch (e) {
+    throw new Error(`Failed to execute api call: ${e.message}`, { cause: e });
+  }
+
+  const parsed = parseAuthResponse(apiResponse, config.resolveValue('apiTokenResponseField'));
+  if (!parsed.ok) {
+    throw new Error(
+      `Something wrong happened on authentication. Got payload: ${JSON.stringify(apiResponse)}`
+    );
+  }
+  return parsed.token;
+}

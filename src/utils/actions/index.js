@@ -13,6 +13,23 @@ export function listFiles({ fs, pathLib, dirs }) {
   return [...files];
 }
 
+async function loadActionFromFile({ loader, file, deps, warn }) {
+  let action;
+  try {
+    const loaded = await loader(file);
+    const mod = loaded.default;
+    action = typeof mod === 'function' ? mod(deps) : mod;
+  } catch (e) {
+    warn(`[geek-lab] skipping "${file}": failed to load (${e.message})`);
+    return null;
+  }
+  if (!action || typeof action.command !== 'string') {
+    warn(`[geek-lab] skipping "${file}": does not export a valid action shape`);
+    return null;
+  }
+  return action;
+}
+
 export async function discoverActions({ fs, pathLib, loader, dirs, deps, warn = console.warn }) {
   const files = listFiles({ fs, pathLib, dirs })
     .filter((file) => ACTION_EXTENSIONS.has(pathLib.extname(file)));
@@ -21,20 +38,8 @@ export async function discoverActions({ fs, pathLib, loader, dirs, deps, warn = 
   const actions = [];
 
   for (const file of files) {
-    let action;
-    try {
-      const loaded = await loader(file);
-      const mod = loaded.default;
-      action = typeof mod === 'function' ? mod(deps) : mod;
-    } catch (e) {
-      warn(`[geek-lab] skipping "${file}": failed to load (${e.message})`);
-      continue;
-    }
-
-    if (!action || typeof action.command !== 'string') {
-      warn(`[geek-lab] skipping "${file}": does not export a valid action shape`);
-      continue;
-    }
+    const action = await loadActionFromFile({ loader, file, deps, warn });
+    if (!action) continue;
 
     const existing = seen.get(action.command);
     if (existing) {

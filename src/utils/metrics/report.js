@@ -1,39 +1,47 @@
-export function buildReportData(store, genId) {
-  const availableActions = Object.keys(store.totalUsage);
-  const availableDays = Object.keys(store.dailyUsage);
-
-  const totalUsage = availableActions.map((action) => [action, store.totalUsage[action]]);
-
-  const actionUsagePerDay = availableActions.map((action) => [
+function actionUsagePerDay(actions, days, dailyUsage) {
+  return actions.map((action) => [
     action,
-    ...availableDays.map((day) => store.dailyUsage[day]?.[action] ?? 0),
+    ...days.map((day) => dailyUsage[day]?.[action] ?? 0),
   ]);
+}
 
-  const generatedOverallGraph = [
+function buildOverallGraph({ actions, days, totalUsage, perDay, genId }) {
+  return [
     {
-      data: JSON.stringify(totalUsage),
+      data: JSON.stringify(actions.map((a) => [a, totalUsage[a]])),
       id: genId('graphic'),
       name: 'Total Usage',
       type: 'donut',
     },
     {
-      data: JSON.stringify(actionUsagePerDay),
+      data: JSON.stringify(perDay),
       id: genId('graphic'),
       name: 'Usage evolution per day',
       type: 'line',
-      categories: JSON.stringify(availableDays),
+      categories: JSON.stringify(days),
     },
   ];
+}
 
-  const generatedeEachActionlGraph = availableActions.map((action, i) => ({
-    data: JSON.stringify(actionUsagePerDay[i]),
+function buildEachActionGraph({ actions, days, perDay, genId }) {
+  return actions.map((action, i) => ({
+    data: JSON.stringify(perDay[i]),
     id: genId('graphic_each_action'),
     name: action,
     type: 'line',
-    categories: JSON.stringify(availableDays),
+    categories: JSON.stringify(days),
     openNewRow: (i % 3) === 0,
     closeRow: (i % 3) === 2,
   }));
+}
 
-  return { generatedOverallGraph, generatedeEachActionlGraph };
+export function buildReportData(store, genId) {
+  const actions = Object.keys(store.totalUsage);
+  const days = Object.keys(store.dailyUsage);
+  const perDay = actionUsagePerDay(actions, days, store.dailyUsage);
+
+  return {
+    generatedOverallGraph: buildOverallGraph({ actions, days, totalUsage: store.totalUsage, perDay, genId }),
+    generatedeEachActionlGraph: buildEachActionGraph({ actions, days, perDay, genId }),
+  };
 }

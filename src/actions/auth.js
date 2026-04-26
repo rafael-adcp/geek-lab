@@ -1,9 +1,4 @@
-import {
-  isTokenValid,
-  parseAuthResponse,
-  computeTokenExpires,
-  resolveAuthBody,
-} from '../utils/auth/index.js';
+import { isTokenValid, computeTokenExpires, fetchToken } from '../utils/auth/index.js';
 
 export default ({ http, config, clock }) => ({
   command: 'auth',
@@ -14,26 +9,7 @@ export default ({ http, config, clock }) => ({
     const now = clock.now();
 
     if (!isTokenValid({ now, token: appConfig.token, tokenExpires: appConfig.tokenExpires })) {
-      let apiResponse;
-      try {
-        apiResponse = await http.request({
-          method: 'POST',
-          endpoint: config.resolveValue('apiAuthenticationEndpoint'),
-          data: resolveAuthBody(config),
-        });
-      } catch (e) {
-        throw new Error(`Failed to execute api call: ${e.message}`, { cause: e });
-      }
-
-      const tokenField = config.resolveValue('apiTokenResponseField');
-      const parsed = parseAuthResponse(apiResponse, tokenField);
-      if (!parsed.ok) {
-        throw new Error(
-          `Something wrong happened on authentication. Got payload: ${JSON.stringify(apiResponse)}`
-        );
-      }
-
-      appConfig.token = parsed.token;
+      appConfig.token = await fetchToken({ http, config });
       appConfig.tokenExpires = computeTokenExpires({
         now,
         expiresInMinutes: config.resolveValue('apiAuthenticationExpiresInMinutes'),

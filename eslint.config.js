@@ -52,6 +52,10 @@ export default [
       'default-case': 'error',
       'no-var': 'error',
       'max-params': ['error', 4],
+      'complexity': ['error', 8],
+      'max-depth': ['error', 3],
+      'max-lines-per-function': ['error', { max: 25, skipBlankLines: true, skipComments: true }],
+      'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],
       'max-len': ['error', 140, {
         ignoreComments: true,
         ignoreUrls: true,
@@ -65,6 +69,16 @@ export default [
       'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 1 }],
       'indent': ['error', 2, { SwitchCase: 1 }],
       'semi': ['error', 'always'],
+    },
+  },
+  // Tests legitimately exceed the per-function line cap (mocha describe
+  // blocks are not real functions; arrange-act-assert often runs long).
+  // Other Sandi mechanical caps still apply.
+  {
+    files: ['test/**/*.js'],
+    rules: {
+      'max-lines-per-function': 'off',
+      'max-lines': 'off',
     },
   },
   // Boundary: utils are pure helpers — they signal failures via thrown
