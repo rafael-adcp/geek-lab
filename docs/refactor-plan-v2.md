@@ -1,6 +1,6 @@
 # Refactor plan v2 — post-ESM cleanup (POOD round 2)
 
-> **Status (2026-04-25):** Phases A, B, C, D, F (new), and G (new) are landed on `refactor-v2`. Tests went 63 → 105 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
+> **Status (2026-04-25):** Phases A, B, C, D, E, F (new), and G (new) are landed on `refactor-v2`. Tests went 63 → 105 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
 
 End goals:
 1. Fix the one production bug surfaced by the v2 audit (`metrics --pretty` writes inside the installed package).
@@ -70,7 +70,9 @@ Commits:
 
 - ~~`test: e2e for mysql via mysql2 shim`~~ — **✅ Landed as `phase-G-2`** (see Phase G below).
 - ~~`refactor(paths): inline os.homedir() if env-var seam is enough`~~ — **✅ Landed as `phase-F-5`** (see Phase F below).
-- `chore(bin): forward update-notifier failures to stderr in debug mode` — the silent catch at [bin/geek-lab.js:34](../bin/geek-lab.js#L34) hides future regressions of update-notifier itself. Still open.
+- `chore(bin): forward update-notifier failures to stderr in debug mode`
+
+   **✅ Done in `phase-E`:** the silent `.catch(() => {})` is replaced with a handler that surfaces the original error to stderr when `config.debugMode === true`, defensively wrapped in a try/catch so an unreadable config keeps the advisory path a no-op. Block stays under `c8 ignore` — the debug branch needs both a debug-mode config AND a real update-notifier failure simultaneously, which isn't reasonable to drive from CI.
 
 ---
 
