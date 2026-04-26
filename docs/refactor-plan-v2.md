@@ -1,6 +1,6 @@
 # Refactor plan v2 — post-ESM cleanup (POOD round 2)
 
-> **Status (2026-04-25):** Phases A, B, C, D, E, F (new), G (new), and H (new) are landed on `refactor-v2`. Tests went 63 → 113 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
+> **Status (2026-04-26):** Phases A, B, C, D, E, F (new), G (new), H (new), and I (new) are landed on `refactor-v2`. Tests went 63 → 116 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. The Sandi/POOD invariants the earlier phases established by inspection are now machine-enforced via ESLint (Phase I). See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
 
 End goals:
 1. Fix the one production bug surfaced by the v2 audit (`metrics --pretty` writes inside the installed package).
@@ -97,6 +97,28 @@ Commits:
 
    **✅ Done in `phase-F-5`:** `paths.userDirectory(os)` and `paths.internalFile(os, fileName)` accepted `os` as a parameter so test code could swap it out — but no test ever did. The e2e helper isolates each invocation by setting `HOME`/`USERPROFILE` on the spawned child, and `os.homedir()` already honors those env vars. Inlined the `os` import into [src/utils/paths.js](../src/utils/paths.js); full e2e suite still passes (proves the env-var seam was sufficient).
 
+### Phase I — Machine-enforce Sandi/POOD rules via ESLint ✅ Done
+
+Promotes the rules phases A–H established by inspection into machine-enforced
+ones via `eslint.config.js`, so the next regression surfaces in lint instead
+of code review.
+
+Commits:
+1. `phase-I-1: chore(lint): boundary rules`
+
+   Three boundary rules:
+   - `no-console: ['error', { allow: ['warn', 'error'] }]` scoped to `src/utils/**` (the rule phases D-2, F-2, H-1 had to enforce by hand each time a util smuggled diagnostics through stdout). The two action-factory files in `src/utils/{mysql,http}/create-action.js` carry per-call `eslint-disable-next-line` directives — the `console.log` lives inside the returned action handler closure (its output channel), not at util level.
+   - `no-restricted-imports` for `axios`/`mysql2`/`mysql2/promise`/`os`/`update-notifier` scoped to `src/**` with `bin/` and `src/utils/bootstrap/` exempt. Locks the DI seam phases A and H-3 established.
+   - `no-restricted-syntax` blocking bare `new Date()` (no-arg) outside [src/utils/clock.js](../src/utils/clock.js). Time enters via `clock.now()`. `new Date(timestamp)` stays legal.
+
+   Side-fix: [test/bin/geek-lab.spec.js](../test/bin/geek-lab.spec.js) now locks `LANG/LC_ALL/LANGUAGE=en` on its `execSync` calls so yargs's translated help text doesn't fail the assertions on translated-locale machines.
+2. `phase-I-2: chore(lint): Sandi mechanical caps`
+
+   Adds `complexity: 8`, `max-depth: 3`, `max-lines-per-function: 25`, `max-lines: 200` (tests get the per-function/per-file caps disabled — describe blocks aren't real functions). The four real violations the cap surfaced were all genuine POOD candidates and got fixed rather than relaxed:
+   - [src/actions/auth.js](../src/actions/auth.js) handler/factory → extracted `fetchToken({ http, config })` into [src/utils/auth/index.js](../src/utils/auth/index.js) with focused unit tests for happy/transport-failure/bad-shape.
+   - [src/utils/actions/index.js](../src/utils/actions/index.js) `discoverActions` → extracted `loadActionFromFile`.
+   - [src/utils/metrics/report.js](../src/utils/metrics/report.js) `buildReportData` → extracted `buildOverallGraph` and `buildEachActionGraph` over a shared `(actions, days, perDay)` view-model.
+
 ### Phase H — POOD round-3 (post-G re-analysis) ✅ Done
 
 After G landed, a fresh POOD pass surfaced five smells that the previous plans
@@ -155,9 +177,10 @@ Current baseline is 100% (c8). Every commit must keep it.
 - ✅ E2e covers `--help` per command (14 cases).
 - ✅ Custom-actions folder tolerates junk files.
 - ✅ E2e covers mysql workflow end-to-end (added in G-2).
-- ✅ Coverage stays at 100%; lint clean; 113 tests passing.
+- ✅ Coverage stays at 100%; lint clean; 116 tests passing.
 - ✅ Zero `console.log` in throw paths anywhere in `src/` (closes the rule for actions, not just utils — added in H-1).
 - ✅ `bin/geek-lab.js` is pure DI wiring; bootstrap policy lives in `src/utils/bootstrap/` (H-3).
+- ✅ POOD/Sandi invariants are machine-enforced (Phase I): no console.log in utils, no infrastructure imports outside bin/bootstrap, no bare `new Date()` outside clock, complexity ≤ 8, depth ≤ 3, function ≤ 25 lines, file ≤ 200 lines.
 
 ---
 
