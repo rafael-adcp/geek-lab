@@ -101,12 +101,8 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
   };
 }
 
-export function writeMysqlShim(home, { rows = [], fields = [] } = {}) {
-  const shimPath = path.join(home, 'mysql2-shim.mjs');
-  const logPath = path.join(home, 'mysql2-shim.log');
-  fs.writeFileSync(
-    shimPath,
-    `import fs from 'fs';
+function recordingShim({ rows, fields, logPath }) {
+  return `import fs from 'fs';
 const log = (entry) => fs.appendFileSync(${JSON.stringify(logPath)}, JSON.stringify(entry) + '\\n');
 export default {
   async createConnection(creds) {
@@ -120,12 +116,33 @@ export default {
     };
   },
 };
-`
-  );
+`;
+}
+
+function rejectingShim({ message }) {
+  return `export default {
+  async createConnection() {
+    return {
+      async execute() { throw new Error(${JSON.stringify(message)}); },
+      async destroy() {},
+    };
+  },
+};
+`;
+}
+
+export function writeMysqlShim(home, opts = {}) {
+  const shimPath = path.join(home, 'mysql2-shim.mjs');
+  const logPath = path.join(home, 'mysql2-shim.log');
+  const source = opts.rejectsWith
+    ? rejectingShim({ message: opts.rejectsWith })
+    : recordingShim({ rows: opts.rows ?? [], fields: opts.fields ?? [], logPath });
+  fs.writeFileSync(shimPath, source);
   return {
     shimPath,
-    readLog: () => fs.readFileSync(logPath, 'utf8')
-      .split('\n').filter(Boolean).map((l) => JSON.parse(l)),
+    readLog: () => fs.existsSync(logPath)
+      ? fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+      : [],
   };
 }
 
@@ -152,4 +169,23 @@ export function startHttpServer(handler) {
       });
     });
   });
+}
+
+// Convenience wrapper: spin up an HTTP fixture, build an isolated env wired
+// at the resulting URL, and return both. Closes the server on cleanup.
+export async function withHttpServer({ handler, config = {}, configOverrides = {} }) {
+  const server = await startHttpServer(handler);
+  const env = createCliEnv({
+    config: {
+      env: 'dev',
+      ...config,
+      dev: { apiUrl: server.url, ...configOverrides },
+    },
+  });
+  const originalCleanup = env.cleanup;
+  env.cleanup = async () => {
+    originalCleanup();
+    await server.close();
+  };
+  return { env, server };
 }

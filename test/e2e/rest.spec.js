@@ -1,31 +1,17 @@
 import assert from 'node:assert/strict';
-import { createCliEnv, startHttpServer } from '../helpers/e2e.js';
+import { createCliEnv, withHttpServer } from '../helpers/e2e.js';
 
 describe('#e2e/rest', () => {
   let env;
-  let server;
 
   afterEach(async () => {
-    env?.cleanup();
+    await env?.cleanup();
     env = null;
-    if (server) {
-      await server.close();
-      server = null;
-    }
   });
 
-  function setup(handler, configOverrides = {}) {
-    return startHttpServer(handler).then((s) => {
-      server = s;
-      env = createCliEnv({
-        config: {
-          env: 'dev',
-          token: 'tok-abc',
-          dev: { apiUrl: server.url, ...configOverrides },
-        },
-      });
-      return server;
-    });
+  function setup(handler) {
+    return withHttpServer({ handler, config: { token: 'tok-abc' } })
+      .then((r) => { env = r.env; return r; });
   }
 
   it('cget hits the configured endpoint with the cached token and prints the response body', async () => {

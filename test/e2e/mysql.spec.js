@@ -93,26 +93,11 @@ describe('#e2e/mysql', () => {
         dev: { mysqlHost: 'h', mysqlUser: 'u', mysqlPassword: 'p' },
       },
     });
-
-    const path = await import('path');
-    const fs = await import('fs');
-    const shimPath = path.default.join(env.home, 'mysql2-shim.mjs');
-    fs.default.writeFileSync(
-      shimPath,
-      `export default {
-  async createConnection() {
-    return {
-      async execute() { throw new Error('connection refused by db'); },
-      async destroy() {},
-    };
-  },
-};
-`
-    );
+    const shim = writeMysqlShim(env.home, { rejectsWith: 'connection refused by db' });
 
     const { status, stdout, stderr } = await env.run(
       ['mysql', '--query', 'select 1'],
-      { GEEK_LAB_MYSQL2_MODULE: shimPath }
+      { GEEK_LAB_MYSQL2_MODULE: shim.shimPath }
     );
 
     assert.notStrictEqual(status, 0);
