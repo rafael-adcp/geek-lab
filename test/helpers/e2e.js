@@ -44,11 +44,11 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
   fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
   fs.writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
 
-  function run(args = []) {
+  function run(args = [], extraEnv = {}) {
     const argv = Array.isArray(args) ? args : String(args).split(' ').filter(Boolean);
     return new Promise((resolve) => {
       const child = spawn(process.execPath, [BIN_PATH, ...argv], {
-        env: { ...process.env, HOME: home, USERPROFILE: home },
+        env: { ...process.env, HOME: home, USERPROFILE: home, ...extraEnv },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       let stdout = '';
@@ -89,6 +89,34 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
     readMetrics,
     writeConfig,
     cleanup,
+  };
+}
+
+export function writeMysqlShim(home, { rows = [], fields = [] } = {}) {
+  const shimPath = path.join(home, 'mysql2-shim.mjs');
+  const logPath = path.join(home, 'mysql2-shim.log');
+  fs.writeFileSync(
+    shimPath,
+    `import fs from 'fs';
+const log = (entry) => fs.appendFileSync(${JSON.stringify(logPath)}, JSON.stringify(entry) + '\\n');
+export default {
+  async createConnection(creds) {
+    log({ event: 'connect', creds });
+    return {
+      async execute(sql) {
+        log({ event: 'execute', sql });
+        return [${JSON.stringify(rows)}, ${JSON.stringify(fields)}];
+      },
+      async destroy() { log({ event: 'destroy' }); },
+    };
+  },
+};
+`
+  );
+  return {
+    shimPath,
+    readLog: () => fs.readFileSync(logPath, 'utf8')
+      .split('\n').filter(Boolean).map((l) => JSON.parse(l)),
   };
 }
 
