@@ -1,6 +1,6 @@
 # Refactor plan v2 — post-ESM cleanup (POOD round 2)
 
-> **Status (2026-04-26):** Phases A, B, C, D, E, F (new), G (new), H (new), and I (new) are landed on `refactor-v2`. Tests went 63 → 116 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. The Sandi/POOD invariants the earlier phases established by inspection are now machine-enforced via ESLint (Phase I). See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
+> **Status (2026-04-26):** Phases A, B, C, D, E, F (new), G (new), H (new), I (new), and J (new) are landed on `refactor-v2`. Tests went 63 → 127 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. The Sandi/POOD invariants the earlier phases established by inspection are now machine-enforced via ESLint (Phase I), and the e2e suite itself was tightened to one-concept-per-it with shared `withHttpServer` / extended `writeMysqlShim` helpers (Phase J). See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
 
 End goals:
 1. Fix the one production bug surfaced by the v2 audit (`metrics --pretty` writes inside the installed package).
@@ -97,6 +97,25 @@ Commits:
 
    **✅ Done in `phase-F-5`:** `paths.userDirectory(os)` and `paths.internalFile(os, fileName)` accepted `os` as a parameter so test code could swap it out — but no test ever did. The e2e helper isolates each invocation by setting `HOME`/`USERPROFILE` on the spawned child, and `os.homedir()` already honors those env vars. Inlined the `os` import into [src/utils/paths.js](../src/utils/paths.js); full e2e suite still passes (proves the env-var seam was sufficient).
 
+### Phase J — Tighten e2e suite to Sandi style ✅ Done
+
+After Phase I made the production code Sandi-clean, a fresh pass over the e2e
+suite surfaced three tactical smells: multi-assertion `it()` blocks, assertions
+on yargs's rendered chrome (which would break on cosmetic library updates),
+and per-spec setup duplication.
+
+Commits:
+1. `phase-J-1: refactor(test/bin): split multi-assertion #bin tests, drop yargs-chrome assertions`
+
+   The four `#bin` tests packed up to 5 assertions each on yargs-rendered substrings (`'<command>'`, `'--help'`, `'invalid command'`, `'see available'`). Split into 7 focused tests under four describe blocks asserting on geek-lab behavior — exit code, presence of geek-lab's own command names in help output, the version from package.json, and the unknown-command recommendation. Extracted small `runExpectingFailure` / `runExpectingSuccess` helpers so each test reads as 1–3 lines of intent.
+2. `phase-J-2: refactor(test): withHttpServer + writeMysqlShim({ rejectsWith }), drop inline path/fs from mysql.spec`
+
+   - `withHttpServer({ handler, config, configOverrides })` collapses the `startHttpServer` + `createCliEnv` + `apiUrl` wiring + close-on-cleanup choreography that [test/e2e/rest.spec.js](../test/e2e/rest.spec.js) (and the in-flight auth.spec) were inlining.
+   - `writeMysqlShim(home, { rejectsWith })` extends the helper so [test/e2e/mysql.spec.js](../test/e2e/mysql.spec.js) no longer has to `await import('path')` / `await import('fs')` inline to write a custom rejecting shim.
+3. `phase-J-3: chore(test): one-concept-per-it for #e2e/auth — before-and-observe pattern`
+
+   The four `#e2e/auth` tests packed up to 5 assertions per CLI invocation (the worst was 5 mixed assertions covering exit code, stdout, request shape, persisted token, persisted expiry). Refactored to the canonical Sandi pattern for expensive setup with multiple observations: one `before()` runs the CLI once and stores the result, then sibling `it()`s each assert one observable. 12 focused tests in total (was 4). Side fix: cleanup() now passes `maxRetries: 5, retryDelay: 100` to `fs.rmSync` to defend against Windows EBUSY when the OS still holds a handle on the temp dir for ~50ms after the spawned child exits.
+
 ### Phase I — Machine-enforce Sandi/POOD rules via ESLint ✅ Done
 
 Promotes the rules phases A–H established by inspection into machine-enforced
@@ -181,6 +200,7 @@ Current baseline is 100% (c8). Every commit must keep it.
 - ✅ Zero `console.log` in throw paths anywhere in `src/` (closes the rule for actions, not just utils — added in H-1).
 - ✅ `bin/geek-lab.js` is pure DI wiring; bootstrap policy lives in `src/utils/bootstrap/` (H-3).
 - ✅ POOD/Sandi invariants are machine-enforced (Phase I): no console.log in utils, no infrastructure imports outside bin/bootstrap, no bare `new Date()` outside clock, complexity ≤ 8, depth ≤ 3, function ≤ 25 lines, file ≤ 200 lines.
+- ✅ E2e suite follows Sandi style (Phase J): one-concept-per-it via before-and-observe, no yargs-chrome assertions, shared `withHttpServer` / extended `writeMysqlShim` helpers, no inline `fs`/`path` in test bodies.
 
 ---
 
