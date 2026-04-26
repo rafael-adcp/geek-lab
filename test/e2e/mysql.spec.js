@@ -1,92 +1,150 @@
 import assert from 'node:assert/strict';
 import { createCliEnv, writeMysqlShim } from '../helpers/e2e.js';
 
-describe('#e2e/mysql', () => {
-  let env;
+const RECORDED_CREDS = { host: 'localhost.test', user: 'tester', password: 'secret' };
 
-  afterEach(() => {
-    env?.cleanup();
-    env = null;
-  });
-
-  function setup(seedRows = []) {
-    env = createCliEnv({
-      config: {
-        env: 'dev',
-        dev: {
-          mysqlHost: 'localhost.test',
-          mysqlUser: 'tester',
-          mysqlPassword: 'secret',
-        },
+function setupRecordingEnv({ seedRows = [] } = {}) {
+  const env = createCliEnv({
+    config: {
+      env: 'dev',
+      dev: {
+        mysqlHost: RECORDED_CREDS.host,
+        mysqlUser: RECORDED_CREDS.user,
+        mysqlPassword: RECORDED_CREDS.password,
       },
-    });
-    const shim = writeMysqlShim(env.home, {
-      rows: seedRows,
-      fields: [{ name: 'id' }, { name: 'name' }],
-    });
-    return { extraEnv: { GEEK_LAB_MYSQL2_MODULE: shim.shimPath }, shim };
-  }
+    },
+  });
+  const shim = writeMysqlShim(env.home, {
+    rows: seedRows,
+    fields: [{ name: 'id' }, { name: 'name' }],
+  });
+  return { env, shim, extraEnv: { GEEK_LAB_MYSQL2_MODULE: shim.shimPath } };
+}
 
-  it('mysql forwards the user-provided --query string straight to execute()', async () => {
-    const { extraEnv, shim } = setup([{ id: 1, name: 'a' }]);
+describe('#e2e/mysql — mysql --query', () => {
+  let env;
+  let shim;
+  let runResult;
 
-    const { stdout, status } = await env.run(
-      ['mysql', '--query', 'select * from heroes'],
-      extraEnv
-    );
-
-    assert.strictEqual(status, 0);
-    const log = shim.readLog();
-    assert.deepStrictEqual(
-      log.find((e) => e.event === 'connect').creds,
-      { host: 'localhost.test', user: 'tester', password: 'secret' }
-    );
-    assert.strictEqual(log.find((e) => e.event === 'execute').sql, 'select * from heroes');
-    assert.ok(log.some((e) => e.event === 'destroy'));
-    assert.deepStrictEqual(JSON.parse(stdout), [{ id: 1, name: 'a' }]);
+  before(async () => {
+    const s = setupRecordingEnv({ seedRows: [{ id: 1, name: 'a' }] });
+    env = s.env;
+    shim = s.shim;
+    runResult = await env.run(['mysql', '--query', 'select * from heroes'], s.extraEnv);
   });
 
-  it('mysql-describe-table renders "describe <table>" from --table', async () => {
-    const { extraEnv, shim } = setup();
+  after(() => env.cleanup());
 
-    const { status } = await env.run(
-      ['mysql-describe-table', '--table', 'humans'],
-      extraEnv
-    );
-
-    assert.strictEqual(status, 0);
-    assert.strictEqual(shim.readLog().find((e) => e.event === 'execute').sql, 'describe humans');
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
   });
 
-  it('mysql-find-column embeds --column in a LIKE on INFORMATION_SCHEMA.COLUMNS', async () => {
-    const { extraEnv, shim } = setup();
+  it('opens a connection with the configured creds', () => {
+    const connect = shim.readLog().find((e) => e.event === 'connect');
+    assert.deepStrictEqual(connect.creds, RECORDED_CREDS);
+  });
 
-    const { status } = await env.run(
-      ['mysql-find-column', '--column', 'is_superhero'],
-      extraEnv
-    );
+  it('forwards the user-provided --query verbatim to execute()', () => {
+    const execute = shim.readLog().find((e) => e.event === 'execute');
+    assert.strictEqual(execute.sql, 'select * from heroes');
+  });
 
-    assert.strictEqual(status, 0);
+  it('destroys the connection before exit', () => {
+    assert.ok(shim.readLog().some((e) => e.event === 'destroy'));
+  });
+
+  it('prints the rows returned by execute() as JSON on stdout', () => {
+    assert.deepStrictEqual(JSON.parse(runResult.stdout), [{ id: 1, name: 'a' }]);
+  });
+});
+
+describe('#e2e/mysql — mysql-describe-table --table', () => {
+  let env;
+  let shim;
+  let runResult;
+
+  before(async () => {
+    const s = setupRecordingEnv();
+    env = s.env;
+    shim = s.shim;
+    runResult = await env.run(['mysql-describe-table', '--table', 'humans'], s.extraEnv);
+  });
+
+  after(() => env.cleanup());
+
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
+
+  it('runs "describe <table>"', () => {
+    const execute = shim.readLog().find((e) => e.event === 'execute');
+    assert.strictEqual(execute.sql, 'describe humans');
+  });
+});
+
+describe('#e2e/mysql — mysql-find-column --column', () => {
+  let env;
+  let shim;
+  let runResult;
+
+  before(async () => {
+    const s = setupRecordingEnv();
+    env = s.env;
+    shim = s.shim;
+    runResult = await env.run(['mysql-find-column', '--column', 'is_superhero'], s.extraEnv);
+  });
+
+  after(() => env.cleanup());
+
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
+
+  it('queries INFORMATION_SCHEMA.COLUMNS', () => {
     const sql = shim.readLog().find((e) => e.event === 'execute').sql;
-    assert.ok(sql.includes('INFORMATION_SCHEMA.COLUMNS'));
-    assert.ok(sql.includes(`'%is_superhero%'`));
+    assert.ok(sql.includes('INFORMATION_SCHEMA.COLUMNS'), `got: ${sql}`);
   });
 
-  it('mysql-find-table embeds --table in a LIKE on INFORMATION_SCHEMA.TABLES', async () => {
-    const { extraEnv, shim } = setup();
-
-    const { status } = await env.run(
-      ['mysql-find-table', '--table', 'sidekicks'],
-      extraEnv
-    );
-
-    assert.strictEqual(status, 0);
+  it('LIKEs the user-provided column name', () => {
     const sql = shim.readLog().find((e) => e.event === 'execute').sql;
-    assert.ok(sql.includes('INFORMATION_SCHEMA.TABLES'));
-    assert.ok(sql.includes(`'%sidekicks%'`));
+    assert.ok(sql.includes(`'%is_superhero%'`), `got: ${sql}`);
+  });
+});
+
+describe('#e2e/mysql — mysql-find-table --table', () => {
+  let env;
+  let shim;
+  let runResult;
+
+  before(async () => {
+    const s = setupRecordingEnv();
+    env = s.env;
+    shim = s.shim;
+    runResult = await env.run(['mysql-find-table', '--table', 'sidekicks'], s.extraEnv);
   });
 
-  it('exits non-zero and surfaces the original cause when execute() rejects', async () => {
+  after(() => env.cleanup());
+
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
+
+  it('queries INFORMATION_SCHEMA.TABLES', () => {
+    const sql = shim.readLog().find((e) => e.event === 'execute').sql;
+    assert.ok(sql.includes('INFORMATION_SCHEMA.TABLES'), `got: ${sql}`);
+  });
+
+  it('LIKEs the user-provided table name', () => {
+    const sql = shim.readLog().find((e) => e.event === 'execute').sql;
+    assert.ok(sql.includes(`'%sidekicks%'`), `got: ${sql}`);
+  });
+});
+
+describe('#e2e/mysql — execute() rejects', () => {
+  let env;
+  let runResult;
+
+  before(async () => {
     env = createCliEnv({
       config: {
         env: 'dev',
@@ -94,15 +152,22 @@ describe('#e2e/mysql', () => {
       },
     });
     const shim = writeMysqlShim(env.home, { rejectsWith: 'connection refused by db' });
+    runResult = await env.run(['mysql', '--query', 'select 1'], { GEEK_LAB_MYSQL2_MODULE: shim.shimPath });
+  });
 
-    const { status, stdout, stderr } = await env.run(
-      ['mysql', '--query', 'select 1'],
-      { GEEK_LAB_MYSQL2_MODULE: shim.shimPath }
-    );
+  after(() => env.cleanup());
 
-    assert.notStrictEqual(status, 0);
-    const out = stdout + stderr;
+  it('exits non-zero', () => {
+    assert.notStrictEqual(runResult.status, 0);
+  });
+
+  it('mentions "Failed to execute query"', () => {
+    const out = runResult.stdout + runResult.stderr;
     assert.ok(out.includes('Failed to execute query'), `got:\n${out}`);
+  });
+
+  it('surfaces the original cause message', () => {
+    const out = runResult.stdout + runResult.stderr;
     assert.ok(out.includes('connection refused by db'), `got:\n${out}`);
   });
 });
