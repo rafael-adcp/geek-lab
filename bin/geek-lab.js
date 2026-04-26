@@ -4,15 +4,6 @@ import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 
 import axios from 'axios';
-
-// mysql2 is loaded dynamically so the e2e suite can inject a fake driver
-// via GEEK_LAB_MYSQL2_MODULE without touching production behavior.
-const mysql2 = (await import(
-  process.env.GEEK_LAB_MYSQL2_MODULE
-    ? pathToFileURL(process.env.GEEK_LAB_MYSQL2_MODULE).href
-    : 'mysql2/promise'
-)).default;
-
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -23,9 +14,12 @@ import * as metrics from '../src/utils/metrics/index.js';
 import * as httpUtil from '../src/utils/http/index.js';
 import * as mysqlUtil from '../src/utils/mysql/index.js';
 import * as actionsUtil from '../src/utils/actions/index.js';
+import { loadMysql2, scheduleUpdateNotifier } from '../src/utils/bootstrap/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+
+const mysql2 = await loadMysql2();
 
 const configPath = paths.internalFile('config_geek-lab.json');
 const metricsPath = paths.internalFile('metrics_geek-lab.json');
@@ -34,20 +28,12 @@ const readConfig = () => config.readConfig(fs, configPath);
 const resolveConfigValue = (key) => config.resolveValue(readConfig(), key);
 const writeConfig = (data) => config.writeConfig(fs, configPath, data);
 
-// update-notifier is ESM-only since v6; fire-and-forget via dynamic import
-// so we never block the CLI even if the network check is slow. Failures
-// are surfaced to stderr only when config.debugMode is true so a regression
-// in update-notifier itself doesn't go unnoticed during debugging.
 /* c8 ignore start */
-import('update-notifier')
-  .then(({ default: updateNotifier }) => updateNotifier({ pkg, updateCheckInterval: 1000 }).notify())
-  .catch((e) => {
-    try {
-      if (readConfig().debugMode) {
-        console.error('[geek-lab] update-notifier check failed:', e);
-      }
-    } catch { /* config unreadable — stay silent on the advisory path */ }
-  });
+scheduleUpdateNotifier({
+  pkg,
+  importer: () => import('update-notifier'),
+  isDebug: () => readConfig().debugMode,
+});
 /* c8 ignore stop */
 
 const httpClient = httpUtil.createHttpClient({
