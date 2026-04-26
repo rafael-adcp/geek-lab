@@ -1,5 +1,7 @@
 # Refactor plan v2 — post-ESM cleanup (POOD round 2)
 
+> **Status (2026-04-25):** Phases A, B, C, D, F (new), and G (new) are landed on `refactor-v2`. Tests went 63 → 105 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
+
 End goals:
 1. Fix the one production bug surfaced by the v2 audit (`metrics --pretty` writes inside the installed package).
 2. Kill the smells that survived (or were created during) the ESM migration: duplicated mysql actions, god-method in `metrics.js`, leaky composition root, console.log inside `utils/*`.
@@ -43,20 +45,66 @@ Commits:
 3. `refactor(bin): simplify customActionsPath dance` — replace the `customActionsPath()` helper + `union` call ([bin/geek-lab.js:63-66, 99](../bin/geek-lab.js#L63-L66)) with `[paths.defaultActionsPath(), ...(readConfig().customActionsPath ?? [])]`.
 4. `refactor(actions): tolerate non-action files in customActionsPath` — [src/utils/actions/index.js:20-37](../src/utils/actions/index.js#L20-L37) crashes the CLI on any non-factory file. Filter to `.js`/`.mjs`/`.cjs`, wrap each loader call in try/catch, log a warning to stderr, and continue. Add an e2e: drop a `README.md` and a broken `.js` into a custom-actions dir, assert CLI still boots and warns.
 
-### Phase D — Clean up the cruft
+   **✅ Done in `phase-C-4`:** [src/utils/actions/index.js](../src/utils/actions/index.js) filters by extension, wraps `loader` in try/catch, validates `action.command` shape, and warns-and-skips. E2e in [test/e2e/custom-actions.spec.js](../test/e2e/custom-actions.spec.js) drops `README.md`, a throw-on-load `.js`, and a no-shape `.js` and asserts the CLI still boots.
+
+### Phase D — Clean up the cruft ✅ Done
 
 Commits:
 1. `refactor(actions): drop dead 'return msg' from handlers` — every handler ends with `console.log(msg); return msg;` but the return value is no longer read (e2e asserts on stdout). Delete from all 10 action files.
+
+   **✅ Done in `phase-D-1`:** dropped from `auth`, `config`, `custom-actions`, `default-actions`, and the `createMysqlAction` factory. Yargs ignores handler return values; nothing in the suite read them.
 2. `refactor(config): readConfig throws diagnostic in cause; no console.log` — [src/utils/config/index.js:7-13](../src/utils/config/index.js#L7-L13) console.logs 5 lines before re-throw. Move the diagnostic into the `Error.cause` chain; the bin (or the user's terminal) can decide what to print.
+
+   **✅ Done in `phase-D-2`:** four `console.log` lines collapsed into a single thrown `Error` with the parse/IO failure preserved as `Error.cause`. Existing e2e at [test/e2e/config.spec.js:44-46](../test/e2e/config.spec.js#L44-L46) still passes (asserts on `'Failed to read file'` + path, both preserved).
 3. `chore: drop low-value lodash wrappers` — `_.toString(x)` → `String(x)`, `_.startsWith(s, '@')` → `s.startsWith('@')`, `_.isEmpty(arr)` → `arr.length === 0` where the type is known to be array. **Lodash stays as a dep.** Only the wrappers that add zero clarity go.
+
+   **✅ Done in `phase-D-3`:** `_.startsWith` → native, `_.isEmpty(string)` → `!string`, `isEmpty(field)` → `!field` for known-string fields. Narrowed `utils/http`'s full lodash import to targeted `lodash/isEmpty.js` (the only wrapper still earning its keep — `params` can be null/undefined/{}). Added `typeof === 'string'` guard around the new `.startsWith` call to preserve `auth.js`'s object-payload tolerance that lodash silently coerced.
 4. `chore: cleanup stale comment + nyc residue` — fix the comment at [bin/geek-lab.js:108-112](../bin/geek-lab.js#L108-L112) (`.commandDir` was removed in yargs 17), and `git rm -r .nyc_output/`.
+
+   **✅ Done in `phase-D-4`:** dropped `.nycrc` (c8 reads `.c8rc.json`, never `.nycrc` — it was dead config from the nyc days). `.nyc_output/` is already gitignored and untracked; nothing to `git rm`. The stale `.commandDir` comment was already gone in earlier phases.
 5. `test: add per-command --help e2e` — yargs has known footguns at the per-command help path. One e2e per built-in command asserting `gik <cmd> --help` exits 0 and includes the command's `describe`.
+
+   **✅ Done in `phase-D-5`:** [test/e2e/per-command-help.spec.js](../test/e2e/per-command-help.spec.js) drives 14 isolated CLI invocations (one per built-in) and asserts each exits 0 and surfaces its own `describe` text.
 
 ### Phase E — Optional / discuss before starting
 
-- `test: e2e for mysql via mysql2 shim` — close the gap inherited from v1 plan (Phase 0 line 69). Probably needs a `customActionsPath`-like seam to inject a fake `mysql2` driver, or running an actual mysql via testcontainers. Worth a separate design discussion.
-- `refactor(paths): inline os.homedir() if env-var seam is enough` — the e2e already drives via `HOME`/`USERPROFILE` env vars; the `os` injection may be vestigial.
-- `chore(bin): forward update-notifier failures to stderr in debug mode` — the silent catch at [bin/geek-lab.js:34](../bin/geek-lab.js#L34) hides future regressions of update-notifier itself.
+- ~~`test: e2e for mysql via mysql2 shim`~~ — **✅ Landed as `phase-G-2`** (see Phase G below).
+- ~~`refactor(paths): inline os.homedir() if env-var seam is enough`~~ — **✅ Landed as `phase-F-5`** (see Phase F below).
+- `chore(bin): forward update-notifier failures to stderr in debug mode` — the silent catch at [bin/geek-lab.js:34](../bin/geek-lab.js#L34) hides future regressions of update-notifier itself. Still open.
+
+---
+
+### Phase F — POOD round-3 work surfaced after D ✅ Done
+
+POOD smells the original v2 plan didn't catch, addressed after Phase D.
+
+Commits:
+1. `refactor(actions): use Map/Set for dedup, structured Error.cause for duplicates`
+
+   **✅ Done in `phase-F-1`:** `seen = []` + `_.find` + `_.isEqual` → `seen = new Map()` keyed on `action.command`. `listFiles` uses an inline `Set` instead of `_.union`, dropping lodash from [src/utils/actions/index.js](../src/utils/actions/index.js) entirely. Duplicate-command path no longer `console.log`s from inside a util; throws a single message with `cause: { command, file, existingFile }`. The literal `'Duplicate command provided'` is preserved so the e2e still asserts on it.
+2. `refactor(http): split validate / resolveBody / normalizeEndpoint`
+
+   **✅ Done in `phase-F-2`:** the 45-line `request()` that did three jobs is now four pure pieces — `validateRequest(params)`, `resolveBody(fs, raw)`, `normalizeEndpoint(s)`, and a thin `createHttpClient` orchestrator. Two more `console.log` lines from inside a util folded into the `Error` message itself (finishes the "no console.log in src/utils/**" rule). Each piece has its own unit test in [test/utils/http.spec.js](../test/utils/http.spec.js).
+3. `refactor(auth): extract isTokenValid + parseAuthResponse + computeTokenExpires`
+
+   **✅ Done in `phase-F-3`:** four-job auth handler split into orchestration over three pure helpers in [src/utils/auth/index.js](../src/utils/auth/index.js). `now` is sourced from the injected `clock` (already in the deps bag for metrics) so the policy is fully deterministic in unit tests at [test/utils/auth.spec.js](../test/utils/auth.spec.js) — no HTTP fixture needed.
+4. `refactor(actions): extract createRestAction factory`
+
+   **✅ Done in `phase-F-4`:** same Sandi extraction `phase-B-1` did for the four mysql actions, applied to `cget`/`cpost`/`cput`/`cdelete`. Each file is now 8 lines of `{ command, method, describe, hasBody }` spec data pointing at one [src/utils/http/create-action.js](../src/utils/http/create-action.js) factory. Adding a fifth verb (cpatch, copts) is now a one-file change.
+5. `chore(paths): drop vestigial os injection`
+
+   **✅ Done in `phase-F-5`:** `paths.userDirectory(os)` and `paths.internalFile(os, fileName)` accepted `os` as a parameter so test code could swap it out — but no test ever did. The e2e helper isolates each invocation by setting `HOME`/`USERPROFILE` on the spawned child, and `os.homedir()` already honors those env vars. Inlined the `os` import into [src/utils/paths.js](../src/utils/paths.js); full e2e suite still passes (proves the env-var seam was sufficient).
+
+### Phase G — Close e2e workflow gaps ✅ Done
+
+Commits:
+1. ~~`test: e2e for malformed custom actions`~~ — landed alongside `phase-C-4`.
+2. `test: e2e for mysql via injectable mysql2 shim`
+
+   **✅ Done in `phase-G-2`:** seam at the composition root — [bin/geek-lab.js](../bin/geek-lab.js) loads `mysql2/promise` via dynamic import that honors `GEEK_LAB_MYSQL2_MODULE` when set (production unchanged when unset). E2e helper grew `writeMysqlShim(home, { rows, fields })` writing a small ESM module with a fake driver that appends events to a log file. [test/e2e/mysql.spec.js](../test/e2e/mysql.spec.js) covers all four mysql commands plus the `execute()`-rejects failure path. With the e2e in place, the `c8 ignore` block around `getCreds` in the bin was deleted — it's exercised on every mysql e2e run.
+3. `test: harden e2e helper`
+
+   **✅ Done in `phase-G-3`:** spawned child now runs with `cwd: home` (full hermeticity — no inheriting the test runner's cwd). The 10s `SIGKILL` fallback used to silently resolve with `status=null, signal='SIGKILL'`; now rejects `run()` with a clear timeout error embedding stdout/stderr.
 
 ---
 
@@ -73,14 +121,16 @@ Current baseline is 100% (c8). Every commit must keep it.
 
 ## Exit criteria
 
-- `metrics --pretty` works on a globally installed read-only prefix and writes outside the package.
-- `bin/geek-lab.js` < 80 lines (today: 144). Pure wiring, no policy.
-- `src/actions/geek-lab/metrics.js` handler < 25 lines (today: ~110).
-- `src/actions/mysql/` collapsed to ≤ 2 files (1 factory + 1 spec table).
-- Zero `console.log` in `src/utils/**`.
-- E2e covers `--help` per command.
-- Custom-actions folder tolerates junk files.
-- Coverage stays at 100%; lint clean; suite green on Node 22.x and 24.x.
+- ✅ `metrics --pretty` works on a globally installed read-only prefix and writes outside the package.
+- ✅ `bin/geek-lab.js` < 80 lines (today: ~75 after F-5). Pure wiring, no policy.
+- ✅ `src/actions/geek-lab/metrics.js` handler < 25 lines (today: ~15).
+- ✅ `src/actions/mysql/` collapsed (1 factory + 4 thin spec entries).
+- ✅ `src/actions/rest/` collapsed (1 factory + 4 thin spec entries — added in F-4).
+- ✅ Zero `console.log` in `src/utils/**`.
+- ✅ E2e covers `--help` per command (14 cases).
+- ✅ Custom-actions folder tolerates junk files.
+- ✅ E2e covers mysql workflow end-to-end (added in G-2).
+- ✅ Coverage stays at 100%; lint clean; 105 tests passing.
 
 ---
 
