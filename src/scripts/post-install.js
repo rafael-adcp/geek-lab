@@ -1,9 +1,8 @@
 import fs from 'fs';
-import os from 'os';
 import { userDirectory } from '../utils/paths.js';
 console.log('Executing post install script');
 
-const localFolderPath = userDirectory(os);
+const localFolderPath = userDirectory();
 
 if (!fs.existsSync(localFolderPath)) {
   console.log(`Creating local folder for geek-lab at ${localFolderPath}`);

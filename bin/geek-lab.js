@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import path from 'path';
 import fs from 'fs';
-import os from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
 
 import axios from 'axios';
@@ -28,8 +27,8 @@ import('update-notifier')
   .then(({ default: updateNotifier }) => updateNotifier({ pkg, updateCheckInterval: 1000 }).notify())
   .catch(() => { /* advisory check — never block the CLI */ });
 
-const configPath = paths.internalFile(os, 'config_geek-lab.json');
-const metricsPath = paths.internalFile(os, 'metrics_geek-lab.json');
+const configPath = paths.internalFile('config_geek-lab.json');
+const metricsPath = paths.internalFile('metrics_geek-lab.json');
 
 const readConfig = () => config.readConfig(fs, configPath);
 const resolveConfigValue = (key) => config.resolveValue(readConfig(), key);
@@ -72,8 +71,8 @@ const deps = {
     resolveValue: resolveConfigValue,
   },
   paths: {
-    userDirectory: () => paths.userDirectory(os),
-    defaultActions: () => paths.defaultActionsPath(),
+    userDirectory: paths.userDirectory,
+    defaultActions: paths.defaultActionsPath,
   },
   actions: {
     list: (dirs) => actionsUtil.listFiles({ fs, pathLib: path, dirs }),
