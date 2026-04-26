@@ -1,4 +1,9 @@
-import { isTokenValid, parseAuthResponse, computeTokenExpires } from '../utils/auth/index.js';
+import {
+  isTokenValid,
+  parseAuthResponse,
+  computeTokenExpires,
+  resolveAuthBody,
+} from '../utils/auth/index.js';
 
 export default ({ http, config, clock }) => ({
   command: 'auth',
@@ -14,7 +19,7 @@ export default ({ http, config, clock }) => ({
         apiResponse = await http.request({
           method: 'POST',
           endpoint: config.resolveValue('apiAuthenticationEndpoint'),
-          data: JSON.parse(config.resolveValue('apiAuthenticationJson')),
+          data: resolveAuthBody(config),
         });
       } catch (e) {
         throw new Error(`Failed to execute api call: ${e.message}`, { cause: e });

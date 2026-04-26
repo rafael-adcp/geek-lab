@@ -16,3 +16,15 @@ export function parseAuthResponse(payload, tokenField) {
 export function computeTokenExpires({ now, expiresInMinutes }) {
   return new Date(now.getTime() + expiresInMinutes * 60000);
 }
+
+export function resolveAuthBody(config) {
+  const raw = config.resolveValue('apiAuthenticationJson');
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    throw new Error(
+      `apiAuthenticationJson is not valid JSON: ${e.message}`,
+      { cause: e }
+    );
+  }
+}

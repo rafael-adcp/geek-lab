@@ -3,6 +3,7 @@ import {
   isTokenValid,
   parseAuthResponse,
   computeTokenExpires,
+  resolveAuthBody,
 } from '../../src/utils/auth/index.js';
 
 describe('#utils/auth/isTokenValid', () => {
@@ -80,5 +81,25 @@ describe('#utils/auth/computeTokenExpires', () => {
     const now = new Date('2026-04-25T12:00:00Z');
     const out = computeTokenExpires({ now, expiresInMinutes: 120 });
     assert.strictEqual(out.toISOString(), '2026-04-25T14:00:00.000Z');
+  });
+});
+
+describe('#utils/auth/resolveAuthBody', () => {
+  it('parses the configured JSON blob into an object', () => {
+    const config = {
+      resolveValue: (key) => key === 'apiAuthenticationJson'
+        ? '{"auth":{"u":"x","p":"y"}}' : null,
+    };
+    assert.deepStrictEqual(resolveAuthBody(config), { auth: { u: 'x', p: 'y' } });
+  });
+
+  it('throws a descriptive error when the configured value is not valid JSON', () => {
+    const config = {
+      resolveValue: () => '{ this is not json',
+    };
+    assert.throws(
+      () => resolveAuthBody(config),
+      /apiAuthenticationJson is not valid JSON/
+    );
   });
 });
