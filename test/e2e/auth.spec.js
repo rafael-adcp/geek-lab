@@ -130,6 +130,6 @@ describe('#e2e/auth', () => {
     const { status, stdout, stderr } = await env.run(['auth']);
 
     assert.notStrictEqual(status, 0);
-    assert.ok((stdout + stderr).includes('Something wrong happend on authentication'));
+    assert.ok((stdout + stderr).includes('Something wrong happened on authentication'));
   });
 });

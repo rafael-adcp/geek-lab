@@ -29,7 +29,7 @@ export default ({ http, config, clock }) => ({
       const parsed = parseAuthResponse(apiResponse, tokenField);
       if (!parsed.ok) {
         throw new Error(
-          `Something wrong happend on authentication. Got payload: ${JSON.stringify(apiResponse)}`
+          `Something wrong happened on authentication. Got payload: ${JSON.stringify(apiResponse)}`
         );
       }
 
