@@ -83,6 +83,7 @@ const deps = {
   },
   http: { request: httpClient.request },
   mysql: { query: mysqlClient.query },
+  clock,
 };
 
 const actions = await actionsUtil.discoverActions({
