@@ -1,10 +1,10 @@
-import _ from 'lodash';
+import isEmpty from 'lodash/isEmpty.js';
 
 const ALLOWED_METHODS = ['POST', 'GET', 'DELETE', 'PUT'];
 
 export function createHttpClient({ axios, fs, getToken, getBaseUrl }) {
   async function request(params) {
-    if (_.isEmpty(params)) {
+    if (isEmpty(params)) {
       throw new Error('No params were provided');
     }
 
@@ -12,8 +12,8 @@ export function createHttpClient({ axios, fs, getToken, getBaseUrl }) {
     const rawEndpoint = params.endpoint || null;
 
     let data;
-    if (!_.isEmpty(params.data)) {
-      data = _.startsWith(params.data, '@')
+    if (params.data) {
+      data = typeof params.data === 'string' && params.data.startsWith('@')
         ? fs.readFileSync(params.data.replace('@', ''), 'utf8')
         : params.data;
     }
@@ -31,7 +31,7 @@ export function createHttpClient({ axios, fs, getToken, getBaseUrl }) {
       throw new Error('Invalid method provided');
     }
 
-    const endpoint = _.startsWith(rawEndpoint, '/') ? rawEndpoint : `/${rawEndpoint}`;
+    const endpoint = rawEndpoint.startsWith('/') ? rawEndpoint : `/${rawEndpoint}`;
 
     const res = await axios.request({
       method: upper,

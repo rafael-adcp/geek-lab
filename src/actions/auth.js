@@ -1,5 +1,3 @@
-import isEmpty from 'lodash/isEmpty.js';
-
 export default ({ http, config }) => ({
   command: 'auth',
   describe: 'performs api authentication',
@@ -19,7 +17,7 @@ export default ({ http, config }) => ({
         throw new Error('Failed to execute api call', { cause: e });
       }
       const tokenField = config.resolveValue('apiTokenResponseField');
-      if (!apiResponse.response || apiResponse.response.status !== 'OK' || isEmpty(apiResponse.response[tokenField])) {
+      if (!apiResponse.response || apiResponse.response.status !== 'OK' || !apiResponse.response[tokenField]) {
         console.log(apiResponse);
         throw new Error('Something wrong happend on authentication');
       }

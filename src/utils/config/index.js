@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import isEmpty from 'lodash/isEmpty.js';
 
 export function readConfig(fs, configPath) {
   try {
@@ -18,11 +18,11 @@ export function writeConfig(fs, configPath, data) {
 
 export function resolveValue(config, key) {
   const currentEnv = config.env;
-  if (_.isEmpty(currentEnv)) {
+  if (!currentEnv) {
     throw new Error('Invalid env for cli');
-  } else if (_.isEmpty(config[currentEnv])) {
+  } else if (isEmpty(config[currentEnv])) {
     throw new Error(`Environment ${currentEnv} is not set on config file.`);
-  } else if (!config[currentEnv][key] && _.isEmpty(config[currentEnv][key])) {
+  } else if (!config[currentEnv][key]) {
     throw new Error(`Key "${key}" is not set for environment "${currentEnv}"`);
   }
   return config[currentEnv][key];
