@@ -1,6 +1,6 @@
 # Refactor plan v2 — post-ESM cleanup (POOD round 2)
 
-> **Status (2026-04-26):** Phases A, B, C, D, E, F (new), G (new), H (new), I (new), and J (new) are landed on `refactor-v2`. Tests went 63 → 127 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. The Sandi/POOD invariants the earlier phases established by inspection are now machine-enforced via ESLint (Phase I), and the e2e suite itself was tightened to one-concept-per-it with shared `withHttpServer` / extended `writeMysqlShim` helpers (Phase J). See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
+> **Status (2026-04-26):** Phases A, B, C, D, E, F (new), G (new), H (new), I (new), J (new), and K (new) are landed on `refactor-v2`. Tests went 63 → 152 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. The Sandi/POOD invariants the earlier phases established by inspection are now machine-enforced via ESLint (Phase I); Phase J refactored `#bin`/`#auth` to one-concept-per-it; Phase K finished the same treatment for `#rest` and `#mysql`. See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
 
 End goals:
 1. Fix the one production bug surfaced by the v2 audit (`metrics --pretty` writes inside the installed package).
@@ -96,6 +96,19 @@ Commits:
 5. `chore(paths): drop vestigial os injection`
 
    **✅ Done in `phase-F-5`:** `paths.userDirectory(os)` and `paths.internalFile(os, fileName)` accepted `os` as a parameter so test code could swap it out — but no test ever did. The e2e helper isolates each invocation by setting `HOME`/`USERPROFILE` on the spawned child, and `os.homedir()` already honors those env vars. Inlined the `os` import into [src/utils/paths.js](../src/utils/paths.js); full e2e suite still passes (proves the env-var seam was sufficient).
+
+### Phase K — Finish the e2e Sandi pass ✅ Done
+
+J-3 split `#e2e/auth` into the before-and-observe pattern; K applies the same
+treatment to the remaining multi-assertion clusters in `#rest` and `#mysql`.
+
+Commits:
+1. `phase-K-1: chore(test): apply before-and-observe to #e2e/rest`
+
+   The 6 #e2e/rest tests packed up to 6 mixed assertions per CLI run (worst was the cpost test conflating exit code, method, url, body, content-type, and response shape). Refactored to one describe per scenario with a `before()` that spins up `withHttpServer` + runs the CLI once and stores the result, then sibling `it()`s each assert one observable. 20 tests in total (was 6).
+2. `phase-K-2: chore(test): apply before-and-observe to #e2e/mysql`
+
+   Same pattern applied to the 5 mysql tests. The `mysql --query` test was the worst — four unrelated observables (creds, executed SQL, destroy event, printed rows) jammed into one `it()`. Pulled the per-test shim wiring into a small top-level `setupRecordingEnv()` helper so the assertion blocks read as intent only. 16 tests in total (was 5).
 
 ### Phase J — Tighten e2e suite to Sandi style ✅ Done
 
@@ -200,7 +213,7 @@ Current baseline is 100% (c8). Every commit must keep it.
 - ✅ Zero `console.log` in throw paths anywhere in `src/` (closes the rule for actions, not just utils — added in H-1).
 - ✅ `bin/geek-lab.js` is pure DI wiring; bootstrap policy lives in `src/utils/bootstrap/` (H-3).
 - ✅ POOD/Sandi invariants are machine-enforced (Phase I): no console.log in utils, no infrastructure imports outside bin/bootstrap, no bare `new Date()` outside clock, complexity ≤ 8, depth ≤ 3, function ≤ 25 lines, file ≤ 200 lines.
-- ✅ E2e suite follows Sandi style (Phase J): one-concept-per-it via before-and-observe, no yargs-chrome assertions, shared `withHttpServer` / extended `writeMysqlShim` helpers, no inline `fs`/`path` in test bodies.
+- ✅ E2e suite follows Sandi style (Phases J+K): every multi-assertion `it()` in `#bin`/`#auth`/`#rest`/`#mysql` rewritten to one-concept-per-it via before-and-observe; no yargs-chrome assertions; shared `withHttpServer` / extended `writeMysqlShim` helpers; no inline `fs`/`path` in test bodies.
 
 ---
 
