@@ -27,19 +27,28 @@ import * as actionsUtil from '../src/utils/actions/index.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
 
-// update-notifier is ESM-only since v6; fire-and-forget via dynamic import
-// so we never block the CLI even if the network check is slow.
-/* c8 ignore next 4 */
-import('update-notifier')
-  .then(({ default: updateNotifier }) => updateNotifier({ pkg, updateCheckInterval: 1000 }).notify())
-  .catch(() => { /* advisory check — never block the CLI */ });
-
 const configPath = paths.internalFile('config_geek-lab.json');
 const metricsPath = paths.internalFile('metrics_geek-lab.json');
 
 const readConfig = () => config.readConfig(fs, configPath);
 const resolveConfigValue = (key) => config.resolveValue(readConfig(), key);
 const writeConfig = (data) => config.writeConfig(fs, configPath, data);
+
+// update-notifier is ESM-only since v6; fire-and-forget via dynamic import
+// so we never block the CLI even if the network check is slow. Failures
+// are surfaced to stderr only when config.debugMode is true so a regression
+// in update-notifier itself doesn't go unnoticed during debugging.
+/* c8 ignore start */
+import('update-notifier')
+  .then(({ default: updateNotifier }) => updateNotifier({ pkg, updateCheckInterval: 1000 }).notify())
+  .catch((e) => {
+    try {
+      if (readConfig().debugMode) {
+        console.error('[geek-lab] update-notifier check failed:', e);
+      }
+    } catch { /* config unreadable — stay silent on the advisory path */ }
+  });
+/* c8 ignore stop */
 
 const httpClient = httpUtil.createHttpClient({
   axios,
