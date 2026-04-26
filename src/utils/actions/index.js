@@ -1,24 +1,23 @@
-import _ from 'lodash';
-
 const ACTION_EXTENSIONS = new Set(['.js', '.mjs', '.cjs']);
 
 export function listFiles({ fs, pathLib, dirs }) {
-  let files = [];
+  const files = new Set();
   for (const dir of dirs) {
     const entries = fs.readdirSync(dir, { recursive: true, withFileTypes: true });
-    const filePaths = entries
-      .filter((entry) => entry.isFile())
-      .map((entry) => pathLib.join(entry.parentPath, entry.name));
-    files = _.union(files, filePaths);
+    for (const entry of entries) {
+      if (entry.isFile()) {
+        files.add(pathLib.join(entry.parentPath, entry.name));
+      }
+    }
   }
-  return files;
+  return [...files];
 }
 
 export async function discoverActions({ fs, pathLib, loader, dirs, deps, warn = console.warn }) {
   const files = listFiles({ fs, pathLib, dirs })
     .filter((file) => ACTION_EXTENSIONS.has(pathLib.extname(file)));
 
-  const seen = [];
+  const seen = new Map();
   const actions = [];
 
   for (const file of files) {
@@ -37,20 +36,15 @@ export async function discoverActions({ fs, pathLib, loader, dirs, deps, warn = 
       continue;
     }
 
-    const dup = _.find(seen, (o) => _.isEqual(o.command, action.command));
-    if (dup) {
-      console.log(
-        `Duplicate command provided, commands should be unique!
-          command "${action.command}"
-          from ${file}
-          already exists
-          it was originally added from: ${dup.path}`
+    const existing = seen.get(action.command);
+    if (existing) {
+      throw new Error(
+        `Duplicate command provided: "${action.command}" from "${file}" already defined by "${existing}"`,
+        { cause: { command: action.command, file, existingFile: existing } }
       );
-      throw new Error('Duplicate command provided');
     }
-    seen.push({ command: action.command, path: file });
+    seen.set(action.command, file);
     actions.push(action);
   }
   return actions;
 }
-
