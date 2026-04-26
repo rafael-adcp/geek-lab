@@ -12,10 +12,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const execBin = `node "${path.resolve(__dirname, '../../bin/geek-lab.js')}"`;
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8'));
 
+// yargs honors LANG/LC_ALL for help text. Lock to English so the assertions
+// (e.g. '<command>' vs '<comando>') hold regardless of the host OS locale.
+const EN_ENV = { ...process.env, LANG: 'en_US.UTF-8', LC_ALL: 'en_US.UTF-8', LANGUAGE: 'en' };
+const exec = (cmd) => execSync(cmd, { env: EN_ENV });
+
 describe('#bin', () => {
   it('should show help if nothing is provided', (done) => {
     try {
-      execSync(`${execBin}`);
+      exec(`${execBin}`);
       done('this shouldnt happen');
     } catch (e) {
       assert.ok((e.toString()).includes('<command>'));
@@ -28,7 +33,7 @@ describe('#bin', () => {
   });
 
   it('should show help if --help is provided', () => {
-    const res = execSync(`${execBin} --help`).toString();
+    const res = exec(`${execBin} --help`).toString();
 
     assert.ok((res).includes('<command>'));
     assert.ok((res).includes('--help'));
@@ -38,7 +43,7 @@ describe('#bin', () => {
   });
 
   it('should show version if --version is provided', () => {
-    const res = execSync(`${execBin} --version`).toString();
+    const res = exec(`${execBin} --version`).toString();
 
     assert.ok(!(res).includes('<command>'));
     assert.ok(!(res).includes('--help'));
@@ -49,7 +54,7 @@ describe('#bin', () => {
 
   it('should exit non-zero and recommend the closest match for an unknown command', () => {
     try {
-      execSync(`${execBin} cgte`);
+      exec(`${execBin} cgte`);
       throw new Error('expected non-zero exit');
     }
     catch (res) {
