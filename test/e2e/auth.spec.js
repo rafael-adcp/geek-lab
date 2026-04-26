@@ -1,135 +1,147 @@
 import assert from 'node:assert/strict';
-import { createCliEnv, startHttpServer } from '../helpers/e2e.js';
+import { withHttpServer } from '../helpers/e2e.js';
 
-describe('#e2e/auth', () => {
+const AUTH_ENDPOINT_CONFIG = {
+  apiAuthenticationEndpoint: '/auth',
+  apiTokenResponseField: 'token',
+  apiAuthenticationExpiresInMinutes: 120,
+  apiAuthenticationJson: JSON.stringify({ auth: { username: 'u', password: 'p' } }),
+};
+
+describe('#e2e/auth — cached non-expired token', () => {
   let env;
-  let server;
+  let hits;
+  let runResult;
 
-  afterEach(async () => {
-    env?.cleanup();
-    env = null;
-    if (server) {
-      await server.close();
-      server = null;
-    }
-  });
-
-  it('reuses a non-expired cached token and skips the API call', async () => {
-    let hits = 0;
-    server = await startHttpServer((req, res) => {
-      hits += 1;
-      res.statusCode = 500;
-      res.end('should not be called');
-    });
-
-    env = createCliEnv({
+  before(async () => {
+    hits = 0;
+    const r = await withHttpServer({
+      handler: (req, res) => { hits += 1; res.statusCode = 500; res.end('should not be called'); },
       config: {
-        env: 'dev',
         token: 'cached-token-xyz',
         tokenExpires: '2099-01-01T00:00:00.000Z',
-        dev: { apiUrl: server.url },
       },
     });
-
-    const { stdout, status } = await env.run(['auth']);
-
-    assert.strictEqual(status, 0);
-    assert.ok(stdout.includes('cached-token-xyz'));
-    assert.strictEqual(hits, 0);
+    env = r.env;
+    runResult = await env.run(['auth']);
   });
 
-  it('requests a new token when none is cached and persists it to config', async () => {
-    let captured;
-    server = await startHttpServer((req, res, body) => {
-      captured = { method: req.method, url: req.url, body };
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ response: { status: 'OK', token: 'freshly-issued' } }));
-    });
+  after(async () => { await env.cleanup(); });
 
-    env = createCliEnv({
-      config: {
-        env: 'dev',
-        token: null,
-        tokenExpires: null,
-        dev: {
-          apiUrl: server.url,
-          apiAuthenticationEndpoint: '/auth',
-          apiTokenResponseField: 'token',
-          apiAuthenticationExpiresInMinutes: 120,
-          apiAuthenticationJson: JSON.stringify({ auth: { username: 'u', password: 'p' } }),
-        },
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
+
+  it('prints the cached token', () => {
+    assert.ok(runResult.stdout.includes('cached-token-xyz'));
+  });
+
+  it('does not hit the auth endpoint', () => {
+    assert.strictEqual(hits, 0);
+  });
+});
+
+describe('#e2e/auth — requests new token when none cached', () => {
+  let env;
+  let captured;
+  let runResult;
+  let testStartTime;
+
+  before(async () => {
+    testStartTime = new Date();
+    const r = await withHttpServer({
+      handler: (req, res, body) => {
+        captured = { method: req.method, url: req.url, body };
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ response: { status: 'OK', token: 'freshly-issued' } }));
       },
+      config: { token: null, tokenExpires: null },
+      configOverrides: AUTH_ENDPOINT_CONFIG,
     });
+    env = r.env;
+    runResult = await env.run(['auth']);
+  });
 
-    const { stdout, status } = await env.run(['auth']);
+  after(async () => { await env.cleanup(); });
 
-    assert.strictEqual(status, 0);
-    assert.ok(stdout.includes('freshly-issued'));
+  it('exits zero', () => {
+    assert.strictEqual(runResult.status, 0);
+  });
+
+  it('prints the freshly-issued token', () => {
+    assert.ok(runResult.stdout.includes('freshly-issued'));
+  });
+
+  it('POSTs to the configured auth endpoint with the configured body', () => {
     assert.deepStrictEqual(captured, {
       method: 'POST',
       url: '/auth',
       body: JSON.stringify({ auth: { username: 'u', password: 'p' } }),
     });
-
-    const config = env.readConfig();
-    assert.strictEqual(config.token, 'freshly-issued');
-    assert.ok(new Date(config.tokenExpires) > new Date());
   });
 
-  it('fails with "Failed to execute api call" when the auth endpoint is unreachable', async () => {
-    server = await startHttpServer((req, res) => {
-      res.statusCode = 200;
-      res.end('{}');
-    });
-    const reachable = server.url;
-    await server.close();
-    server = null;
-
-    env = createCliEnv({
-      config: {
-        env: 'dev',
-        token: null,
-        tokenExpires: null,
-        dev: {
-          apiUrl: reachable,
-          apiAuthenticationEndpoint: '/auth',
-          apiTokenResponseField: 'token',
-          apiAuthenticationExpiresInMinutes: 120,
-          apiAuthenticationJson: JSON.stringify({ auth: { username: 'u', password: 'p' } }),
-        },
-      },
-    });
-
-    const { status, stdout, stderr } = await env.run(['auth']);
-
-    assert.notStrictEqual(status, 0);
-    assert.ok((stdout + stderr).includes('Failed to execute api call'));
+  it('persists the new token to config', () => {
+    assert.strictEqual(env.readConfig().token, 'freshly-issued');
   });
 
-  it('fails when the API responds without the expected shape', async () => {
-    server = await startHttpServer((req, res) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ response: { status: 'ERROR' } }));
-    });
-
-    env = createCliEnv({
-      config: {
-        env: 'dev',
-        token: null,
-        tokenExpires: null,
-        dev: {
-          apiUrl: server.url,
-          apiAuthenticationEndpoint: '/auth',
-          apiTokenResponseField: 'token',
-          apiAuthenticationExpiresInMinutes: 120,
-          apiAuthenticationJson: JSON.stringify({ auth: { username: 'u', password: 'p' } }),
-        },
-      },
-    });
-
-    const { status, stdout, stderr } = await env.run(['auth']);
-
-    assert.notStrictEqual(status, 0);
-    assert.ok((stdout + stderr).includes('Something wrong happened on authentication'));
+  it('persists a tokenExpires in the future', () => {
+    const expires = new Date(env.readConfig().tokenExpires);
+    assert.ok(expires > testStartTime, `expected ${expires.toISOString()} > ${testStartTime.toISOString()}`);
   });
 });
+
+describe('#e2e/auth — auth endpoint unreachable', () => {
+  let env;
+  let runResult;
+
+  before(async () => {
+    const r = await withHttpServer({
+      handler: (req, res) => { res.statusCode = 200; res.end('{}'); },
+      config: { token: null, tokenExpires: null },
+      configOverrides: AUTH_ENDPOINT_CONFIG,
+    });
+    env = r.env;
+    // close the server but keep the now-unreachable URL in config
+    await r.server.close();
+    runResult = await env.run(['auth']);
+  });
+
+  after(async () => { await env.cleanup(); });
+
+  it('exits non-zero', () => {
+    assert.notStrictEqual(runResult.status, 0);
+  });
+
+  it('surfaces "Failed to execute api call" in the output', () => {
+    assert.ok((runResult.stdout + runResult.stderr).includes('Failed to execute api call'));
+  });
+});
+
+describe('#e2e/auth — API responds with bad shape', () => {
+  let env;
+  let runResult;
+
+  before(async () => {
+    const r = await withHttpServer({
+      handler: (req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ response: { status: 'ERROR' } }));
+      },
+      config: { token: null, tokenExpires: null },
+      configOverrides: AUTH_ENDPOINT_CONFIG,
+    });
+    env = r.env;
+    runResult = await env.run(['auth']);
+  });
+
+  after(async () => { await env.cleanup(); });
+
+  it('exits non-zero', () => {
+    assert.notStrictEqual(runResult.status, 0);
+  });
+
+  it('surfaces "Something wrong happened on authentication" in the output', () => {
+    assert.ok((runResult.stdout + runResult.stderr).includes('Something wrong happened on authentication'));
+  });
+});
+

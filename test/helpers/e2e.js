@@ -85,7 +85,9 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
   }
 
   function cleanup() {
-    fs.rmSync(home, { recursive: true, force: true });
+    // maxRetries + retryDelay defend against EBUSY on Windows when the
+    // child process has only just exited and the OS still holds a handle.
+    fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 
   return {
