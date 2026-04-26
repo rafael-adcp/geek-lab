@@ -9,9 +9,8 @@ export default function createMysqlAction({ command, describe, argName, buildQue
     handler: async (argv) => {
       const query = buildQuery(argv[argName]);
       try {
-        const mysqlResult = await mysql.query(query);
-        console.log(JSON.stringify(mysqlResult.rows, null, 2));
-        return mysqlResult;
+        const { rows } = await mysql.query(query);
+        console.log(JSON.stringify(rows, null, 2));
       } catch (e) {
         console.log(e.toString());
         throw new Error(`Failed to execute query: "${query}" due to ` + e.toString(), { cause: e });

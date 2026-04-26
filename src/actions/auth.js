@@ -29,8 +29,6 @@ export default ({ http, config }) => ({
       appConfig.tokenExpires = new Date(Date.now() + expiresInMinutes * 60000);
       config.write(appConfig);
     }
-    const response = `auth worked, token: ${appConfig.token}`;
-    console.log(response);
-    return response;
+    console.log(`auth worked, token: ${appConfig.token}`);
   },
 });
