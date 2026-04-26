@@ -46,18 +46,27 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
 
   function run(args = [], extraEnv = {}) {
     const argv = Array.isArray(args) ? args : String(args).split(' ').filter(Boolean);
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [BIN_PATH, ...argv], {
+        cwd: home,
         env: { ...process.env, HOME: home, USERPROFILE: home, ...extraEnv },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       let stdout = '';
       let stderr = '';
+      let timedOut = false;
       child.stdout.on('data', (c) => { stdout += c.toString('utf8'); });
       child.stderr.on('data', (c) => { stderr += c.toString('utf8'); });
-      const killer = setTimeout(() => child.kill('SIGKILL'), 10000);
+      const killer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, 10000);
       child.on('exit', (status, signal) => {
         clearTimeout(killer);
+        if (timedOut) {
+          reject(new Error(
+            `CLI invocation timed out after 10s: ${argv.join(' ')}\n` +
+            `--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`
+          ));
+          return;
+        }
         resolve({ stdout, stderr, status, signal });
       });
     });
