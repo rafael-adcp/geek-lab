@@ -1,6 +1,6 @@
 # Refactor plan v2 — post-ESM cleanup (POOD round 2)
 
-> **Status (2026-04-25):** Phases A, B, C, D, E, F (new), and G (new) are landed on `refactor-v2`. Tests went 63 → 105 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
+> **Status (2026-04-25):** Phases A, B, C, D, E, F (new), G (new), and H (new) are landed on `refactor-v2`. Tests went 63 → 113 passing, coverage stayed at 100% (lines/branches/funcs/statements), lint clean. See per-phase "What landed" notes below and `git log master..refactor-v2` for the commit trail.
 
 End goals:
 1. Fix the one production bug surfaced by the v2 audit (`metrics --pretty` writes inside the installed package).
@@ -97,6 +97,29 @@ Commits:
 
    **✅ Done in `phase-F-5`:** `paths.userDirectory(os)` and `paths.internalFile(os, fileName)` accepted `os` as a parameter so test code could swap it out — but no test ever did. The e2e helper isolates each invocation by setting `HOME`/`USERPROFILE` on the spawned child, and `os.homedir()` already honors those env vars. Inlined the `os` import into [src/utils/paths.js](../src/utils/paths.js); full e2e suite still passes (proves the env-var seam was sufficient).
 
+### Phase H — POOD round-3 (post-G re-analysis) ✅ Done
+
+After G landed, a fresh POOD pass surfaced five smells that the previous plans
+hadn't caught — most centered on residual `console.log` inside throw paths and
+new bootstrap responsibilities that had crept into the bin.
+
+Commits:
+1. `phase-H-1: refactor(actions): drop console.log + throw pairs`
+
+   The auth handler ([src/actions/auth.js](../src/actions/auth.js)) and the mysql action factory ([src/utils/mysql/create-action.js](../src/utils/mysql/create-action.js)) each `console.log`'d before re-throwing — same anti-pattern Phase D-2 fixed for utils/config. Errors now embed the cause inline so e2e assertions on stdout+stderr still match (yargs prints the thrown message to stderr).
+2. `phase-H-2: refactor(auth): extract resolveAuthBody, drop JSON.parse from handler`
+
+   The handler used to call `JSON.parse(config.resolveValue('apiAuthenticationJson'))` inline — config-shape policy leaking into the action. Pulled into [src/utils/auth/index.js](../src/utils/auth/index.js) as `resolveAuthBody(config)` with focused unit tests covering the previously-untested invalid-JSON failure.
+3. `phase-H-3: refactor(bin): extract loadMysql2 + scheduleUpdateNotifier bootstrap helpers`
+
+   Two new bootstrap responsibilities had crept into [bin/geek-lab.js](../bin/geek-lab.js) since the v2 plan was written — the `GEEK_LAB_MYSQL2_MODULE`-aware dynamic import and the update-notifier wiring. Moved both to [src/utils/bootstrap/index.js](../src/utils/bootstrap/index.js); the bin returns to pure DI wiring. Bootstrap helpers got their own unit tests covering all four update-notifier branches (success, silent failure, debug-logged failure, unreadable-config defensive path) which were previously c8-ignored in the bin and untested.
+4. `phase-H-4: chore: drop unused 'main' field from package.json`
+
+   `main` is meaningful for libraries (`require('foo')`); useless for a CLI where `bin` is the entrypoint. The pointer was dead metadata.
+5. `phase-H-5: chore(auth): fix 'happend' typo in auth error message`
+
+   The error read 'Something wrong happend on authentication' (missing 'e'); the e2e asserted on the typo, locking it in. Fixed both in one commit.
+
 ### Phase G — Close e2e workflow gaps ✅ Done
 
 Commits:
@@ -132,7 +155,9 @@ Current baseline is 100% (c8). Every commit must keep it.
 - ✅ E2e covers `--help` per command (14 cases).
 - ✅ Custom-actions folder tolerates junk files.
 - ✅ E2e covers mysql workflow end-to-end (added in G-2).
-- ✅ Coverage stays at 100%; lint clean; 105 tests passing.
+- ✅ Coverage stays at 100%; lint clean; 113 tests passing.
+- ✅ Zero `console.log` in throw paths anywhere in `src/` (closes the rule for actions, not just utils — added in H-1).
+- ✅ `bin/geek-lab.js` is pure DI wiring; bootstrap policy lives in `src/utils/bootstrap/` (H-3).
 
 ---
 
