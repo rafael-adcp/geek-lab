@@ -25,3 +25,11 @@ jobs:
         npm run test
       env:
         CI: true
+    - name: Upload coverage to Codecov
+      if: success() && github.ref == 'refs/heads/master' && matrix.node-version == '24.x'
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage/lcov.info
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

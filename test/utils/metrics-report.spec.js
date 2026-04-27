@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildReportData } from '../../src/utils/metrics/report.js';
+import { buildReportData, renderReport } from '../../src/utils/metrics/report.js';
 
 function counterId() {
   let n = 0;
@@ -78,5 +78,37 @@ describe('#utils/metrics/report/buildReportData', () => {
     assert.strictEqual(data.generatedOverallGraph[1].id, 'graphic_1');
     assert.strictEqual(data.generatedeEachActionlGraph[0].id, 'graphic_each_action_2');
     assert.strictEqual(data.generatedeEachActionlGraph[1].id, 'graphic_each_action_3');
+  });
+});
+
+describe('#utils/metrics/report/renderReport', () => {
+  it('reads the template from fs at the configured path, compiles it through handlebars, and applies the report view-model', () => {
+    const reads = [];
+    const fs = {
+      readFileSync: (p, enc) => {
+        reads.push([p, enc]);
+        return 'TEMPLATE_SOURCE';
+      },
+    };
+    const compiled = [];
+    const handlebars = {
+      compile: (src) => {
+        compiled.push(src);
+        return (data) => `rendered:${data.generatedOverallGraph.length}:${data.generatedeEachActionlGraph.length}`;
+      },
+    };
+
+    const out = renderReport({
+      fs,
+      handlebars,
+      templatePath: '/etc/template.hb',
+      store: { totalUsage: { foo: 1 }, dailyUsage: {} },
+      genId: counterId(),
+    });
+
+    assert.deepStrictEqual(reads, [['/etc/template.hb', 'utf8']]);
+    assert.deepStrictEqual(compiled, ['TEMPLATE_SOURCE']);
+    // 2 overall graph entries + 1 per-action entry
+    assert.strictEqual(out, 'rendered:2:1');
   });
 });
