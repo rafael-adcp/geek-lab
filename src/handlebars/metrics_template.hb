@@ -76,7 +76,7 @@
 
             </div>
             <hr/>
-            {{#each generatedeEachActionlGraph}}
+            {{#each generatedEachActionGraph}}
               {{#if openNewRow}}
                 <div class = "row">
               {{/if}}

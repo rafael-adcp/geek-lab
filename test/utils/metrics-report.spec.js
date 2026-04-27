@@ -13,7 +13,7 @@ describe('#utils/metrics/report/buildReportData', () => {
     assert.strictEqual(data.generatedOverallGraph.length, 2);
     assert.deepStrictEqual(JSON.parse(data.generatedOverallGraph[0].data), []);
     assert.deepStrictEqual(JSON.parse(data.generatedOverallGraph[1].data), []);
-    assert.deepStrictEqual(data.generatedeEachActionlGraph, []);
+    assert.deepStrictEqual(data.generatedEachActionGraph, []);
   });
 
   it('builds the donut series from totalUsage', () => {
@@ -58,7 +58,7 @@ describe('#utils/metrics/report/buildReportData', () => {
       dailyUsage: {},
     }, counterId());
 
-    const flags = data.generatedeEachActionlGraph.map(({ openNewRow, closeRow }) => ({ openNewRow, closeRow }));
+    const flags = data.generatedEachActionGraph.map(({ openNewRow, closeRow }) => ({ openNewRow, closeRow }));
     assert.deepStrictEqual(flags, [
       { openNewRow: true, closeRow: false },
       { openNewRow: false, closeRow: false },
@@ -76,8 +76,8 @@ describe('#utils/metrics/report/buildReportData', () => {
 
     assert.strictEqual(data.generatedOverallGraph[0].id, 'graphic_0');
     assert.strictEqual(data.generatedOverallGraph[1].id, 'graphic_1');
-    assert.strictEqual(data.generatedeEachActionlGraph[0].id, 'graphic_each_action_2');
-    assert.strictEqual(data.generatedeEachActionlGraph[1].id, 'graphic_each_action_3');
+    assert.strictEqual(data.generatedEachActionGraph[0].id, 'graphic_each_action_2');
+    assert.strictEqual(data.generatedEachActionGraph[1].id, 'graphic_each_action_3');
   });
 });
 
@@ -94,7 +94,7 @@ describe('#utils/metrics/report/renderReport', () => {
     const handlebars = {
       compile: (src) => {
         compiled.push(src);
-        return (data) => `rendered:${data.generatedOverallGraph.length}:${data.generatedeEachActionlGraph.length}`;
+        return (data) => `rendered:${data.generatedOverallGraph.length}:${data.generatedEachActionGraph.length}`;
       },
     };
 
