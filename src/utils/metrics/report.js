@@ -45,3 +45,8 @@ export function buildReportData(store, genId) {
     generatedeEachActionlGraph: buildEachActionGraph({ actions, days, perDay, genId }),
   };
 }
+
+export function renderReport({ fs, handlebars, templatePath, store, genId }) {
+  const template = handlebars.compile(fs.readFileSync(templatePath, 'utf8'));
+  return template(buildReportData(store, genId));
+}

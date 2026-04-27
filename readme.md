@@ -3,6 +3,7 @@
 A cross-platform CLI for collecting, sharing and running your team's everyday scripts from one place.
 
 [![Node CI](https://github.com/rafael-adcp/geek-lab/actions/workflows/nodejs.yml/badge.svg)](https://github.com/rafael-adcp/geek-lab/actions/workflows/nodejs.yml)
+[![codecov](https://codecov.io/gh/rafael-adcp/geek-lab/branch/master/graph/badge.svg)](https://codecov.io/gh/rafael-adcp/geek-lab)
 [![npm version](https://img.shields.io/npm/v/geek-lab.svg)](https://www.npmjs.com/package/geek-lab)
 [![license](https://img.shields.io/npm/l/geek-lab.svg)](LICENSE)
 

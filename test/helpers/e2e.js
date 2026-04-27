@@ -84,9 +84,19 @@ export function createCliEnv({ config = {}, metrics = DEFAULT_METRICS } = {}) {
     fs.writeFileSync(configPath, JSON.stringify(next, null, 2));
   }
 
-  function cleanup() {
-    // maxRetries + retryDelay defend against EBUSY on Windows when the
-    // child process has only just exited and the OS still holds a handle.
+  async function cleanup() {
+    // EBUSY defense for Windows: child processes can hold handles for up to a
+    // few seconds after exit, and rmSync's built-in retry is shallow.
+    // Specs that spawn multiple children before cleanup are the common case.
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      try {
+        fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+        return;
+      } catch (e) {
+        if (e.code !== 'EBUSY' && e.code !== 'ENOTEMPTY' && e.code !== 'EPERM') throw e;
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    }
     fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 
@@ -186,7 +196,7 @@ export async function withHttpServer({ handler, config = {}, configOverrides = {
   });
   const originalCleanup = env.cleanup;
   env.cleanup = async () => {
-    originalCleanup();
+    await originalCleanup();
     await server.close();
   };
   return { env, server };

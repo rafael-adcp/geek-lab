@@ -1,17 +1,12 @@
 import handlebars from 'handlebars';
-import fs from 'fs';
 import { v1 as uuidv1 } from 'uuid';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-import { buildReportData } from '../../utils/metrics/report.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TEMPLATE_PATH = path.resolve(__dirname, '../../handlebars/metrics_template.hb');
+import { renderReport } from '../../utils/metrics/report.js';
 
 const genId = (prefix) => `${prefix}_${uuidv1().replace(/-/g, '_')}`;
 
-export default ({ metrics, paths }) => ({
+export default ({ metrics, paths, fs }) => ({
   command: 'metrics',
   describe: 'show current metrics for cli',
   builder: (yargs) => yargs
@@ -25,8 +20,9 @@ export default ({ metrics, paths }) => ({
       return;
     }
 
-    const template = handlebars.compile(fs.readFileSync(TEMPLATE_PATH, 'utf8'));
-    const html = template(buildReportData(store, genId));
+    const html = renderReport({
+      fs, handlebars, templatePath: paths.metricsTemplate(), store, genId,
+    });
     const dest = path.join(paths.userDirectory(), `awesome_metrics_graph_${uuidv1()}.html`);
     fs.writeFileSync(dest, html);
     console.log(`Html report generated and located at ${dest}`);

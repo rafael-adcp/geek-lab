@@ -15,3 +15,7 @@ export function internalFile(fileName) {
 export function defaultActionsPath() {
   return path.join(__dirname, '../actions');
 }
+
+export function metricsTemplatePath() {
+  return path.join(__dirname, '../handlebars/metrics_template.hb');
+}

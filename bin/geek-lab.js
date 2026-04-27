@@ -71,6 +71,7 @@ const deps = {
   paths: {
     userDirectory: paths.userDirectory,
     defaultActions: paths.defaultActionsPath,
+    metricsTemplate: paths.metricsTemplatePath,
   },
   actions: {
     list: (dirs) => actionsUtil.listFiles({ fs, pathLib: path, dirs }),
@@ -81,6 +82,7 @@ const deps = {
   http: { request: httpClient.request },
   mysql: { query: mysqlClient.query },
   clock,
+  fs,
 };
 
 const actions = await actionsUtil.discoverActions({
