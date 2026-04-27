@@ -1,9 +1,18 @@
 const ACTION_EXTENSIONS = new Set(['.js', '.mjs', '.cjs']);
 
-export function listFiles({ fs, pathLib, dirs }) {
+export function listFiles({ fs, pathLib, dirs, warn = console.warn }) {
   const files = new Set();
   for (const dir of dirs) {
-    const entries = fs.readdirSync(dir, { recursive: true, withFileTypes: true });
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { recursive: true, withFileTypes: true });
+    } catch (e) {
+      if (e.code === 'ENOENT') {
+        warn(`[geek-lab] skipping customActionsPath "${dir}": directory does not exist`);
+        continue;
+      }
+      throw e;
+    }
     for (const entry of entries) {
       if (entry.isFile()) {
         files.add(pathLib.join(entry.parentPath, entry.name));
@@ -31,7 +40,7 @@ async function loadActionFromFile({ loader, file, deps, warn }) {
 }
 
 export async function discoverActions({ fs, pathLib, loader, dirs, deps, warn = console.warn }) {
-  const files = listFiles({ fs, pathLib, dirs })
+  const files = listFiles({ fs, pathLib, dirs, warn })
     .filter((file) => ACTION_EXTENSIONS.has(pathLib.extname(file)));
 
   const seen = new Map();

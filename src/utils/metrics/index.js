@@ -3,7 +3,7 @@ export function readMetrics(fs, metricsPath) {
 }
 
 export function writeMetrics(fs, metricsPath, data) {
-  fs.writeFileSync(metricsPath, JSON.stringify(data, null, '  '));
+  fs.writeFileSync(metricsPath, JSON.stringify(data, null, 2));
 }
 
 export function recordUsage({ store, clock, command }) {
