@@ -7,18 +7,14 @@ export default ({ config }) => ({
     .option('env', { describe: 'environment', type: 'string' })
     .demandOption('env', 'Please provide parameter --env'),
   handler: (argv) => {
-    const configFileContent = config.read();
+    const current = config.read();
     const environment = argv.env;
 
-    if (!configFileContent[environment]) {
+    if (!current[environment]) {
       throw new Error('Environment dont exist on cli configuration');
     }
 
-    configFileContent.env = environment;
-    configFileContent.token = null;
-    configFileContent.tokenExpires = null;
-
-    config.write(configFileContent);
+    config.write({ ...current, env: environment, token: null, tokenExpires: null });
 
     console.log(`Successfully moved cli to use "${environment}"`);
   },

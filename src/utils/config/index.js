@@ -13,7 +13,7 @@ export function readConfig(fs, configPath) {
 }
 
 export function writeConfig(fs, configPath, data) {
-  fs.writeFileSync(configPath, JSON.stringify(data, null, '  '));
+  fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
 }
 
 export function resolveValue(config, key) {

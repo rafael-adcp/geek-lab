@@ -42,7 +42,7 @@ export function buildReportData(store, genId) {
 
   return {
     generatedOverallGraph: buildOverallGraph({ actions, days, totalUsage: store.totalUsage, perDay, genId }),
-    generatedeEachActionlGraph: buildEachActionGraph({ actions, days, perDay, genId }),
+    generatedEachActionGraph: buildEachActionGraph({ actions, days, perDay, genId }),
   };
 }
 

@@ -98,6 +98,24 @@ describe('#e2e/custom-actions', () => {
     );
   });
 
+  it('warns and keeps booting when customActionsPath points at a directory that does not exist', async () => {
+    env = createCliEnv();
+    const missing = path.join(env.home, 'does-not-exist');
+    const cfg = env.readConfig();
+    cfg.customActionsPath = [missing];
+    env.writeConfig(cfg);
+
+    const { stdout, stderr, status } = await env.run(['default-actions']);
+
+    assert.strictEqual(status, 0);
+    assert.ok(stdout.includes('Default actions are located at:'));
+    const out = stdout + stderr;
+    assert.ok(
+      out.includes('skipping customActionsPath') && out.includes(missing),
+      `expected skip warning naming the missing dir, got:\n${out}`
+    );
+  });
+
   it('lists every file discovered under customActionsPath', async () => {
     env = createCliEnv();
 
